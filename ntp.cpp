@@ -232,13 +232,15 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         g_ROOTtree->Branch(nam1,&g_tTDC[g_rp.datachan[i]][0],fmt);
       }
       else if(3==g_rp.datatype[i]){ // DIG
-        g_used742[1]=1;
+        int JCH=g_rp.datachan[i];
+        if(JCH>7)JCH+=1; // account for tr0 which is inserted as #8
+        g_used742[JCH]=1;
         sprintf(nam,"%s_nd%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
         sprintf(fmt,"%s/I",nam);
-        g_ROOTtree->Branch(nam,&g_nDT5742[g_rp.datachan[i]],fmt);
+        g_ROOTtree->Branch(nam,&g_nDT5742[JCH],fmt);
         sprintf(nam1,"%s_ad%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s[%s]/I",nam1,nam);
-        g_ROOTtree->Branch(nam1,&g_aDT5742[g_rp.datachan[i]][0],fmt);
+        sprintf(fmt,"%s[%s]/F",nam1,nam);
+        g_ROOTtree->Branch(nam1,&g_aDT5742[JCH][0],fmt);
       }
     }
   }

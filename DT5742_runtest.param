@@ -73,7 +73,7 @@ EXTERNAL_TRIGGER   ACQUISITION_ONLY
 # FAST_TRIGGER: fast trigger input settings. ONLY FOR 742 MODELS. When enabled, the fast trigger is used
 # for the data acquisition 
 # options: DISABLED, ACQUISITION_ONLY
-FAST_TRIGGER   DISABLED
+FAST_TRIGGER   ACQUISITION_ONLY
 
 # FAST_TRIGGER_DIGITIZING: ONLY FOR 742 MODELS. If enabled the fast trigger signal is digitized and it is
 # present in data readout as channel n.8 for each group.
@@ -157,22 +157,97 @@ ENABLE_INPUT          YES
 [0]
 ENABLE_INPUT           YES
 PULSE_POLARITY         NEGATIVE
-DC_OFFSET              50
+DC_OFFSET              40
 GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
 
 [1]
-ENABLE_INPUT           NO
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[2]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[3]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
 
 [4]
 ENABLE_INPUT           YES
 PULSE_POLARITY         NEGATIVE
-DC_OFFSET              50
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[5]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[6]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[7]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
 GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
 
 [8]
 ENABLE_INPUT           YES
 PULSE_POLARITY         NEGATIVE
-DC_OFFSET              50
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[9]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[10]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[11]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[12]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[13]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[14]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
+GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
+
+[15]
+ENABLE_INPUT           YES
+PULSE_POLARITY         NEGATIVE
+DC_OFFSET              40
 GRP_CH_DC_OFFSET       0,0,0,0,0,0,0,0 
 
 # ----------------------------------------------------------------

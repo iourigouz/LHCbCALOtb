@@ -11,6 +11,9 @@
 
 #include <stdlib.h>
 
+#include <errno.h>
+#include <dirent.h>
+
 #include "signal.h"
 
 #include "TROOT.h"
@@ -29,6 +32,45 @@
 
 bool g_exit=false;
 int g_print=0;
+bool g_sleeping=false;
+
+int g_runnumber=0;
+
+int getlastrunnumber(const char* task){
+  // this is to find the last run number in the directory "task"
+  // the file name format is task_<run_number>.root
+  
+  //unsigned char isFile =0x8, isFolder =0x4;
+  DIR *dp;
+  struct dirent *dent;
+  int retval=-1;
+  
+  struct stat st;
+  if(0==stat(task,&st)) return -1;
+  
+  if( (dp = opendir(task)) == NULL) {
+    fprintf(stderr, "%s: opendir error, %s: %s\n", __func__, task, strerror(errno));
+    return -1;
+  }
+  
+  errno=0;
+  while( (dent = readdir(dp)) ){
+    if(DT_REG==dent->d_type){
+      const char* taskpos=strstr(dent->d_name,task);
+      const char* dotroot=strstr(dent->d_name,".root");
+      if(taskpos && dotroot){
+        const char* underscore=dotroot;
+        for(; '_'!=*underscore && (dent->d_name)!=underscore; underscore--){;};
+        if('_'==*underscore){
+          int j;
+          int nit=sscanf(underscore+1,"%d",&j);
+          if(1==nit && j>retval)retval=j;
+        }
+      }
+    }
+  }
+  return retval;
+}
 
 void ctrc_hdl(int s){
   printf("\nCaught signal %d, exiting...\n",s);
@@ -59,9 +101,7 @@ std::string exec(const char* cmd) {
   return result;
 }
 
-
-
-int main(int argc, char *argv[]){
+void ctrl_init(){
   //-------------
   struct sigaction sigIntHandler;
   sigIntHandler.sa_handler = ctrc_hdl;
@@ -81,10 +121,15 @@ int main(int argc, char *argv[]){
   sigTstpHandler.sa_flags = 0;
   sigaction(SIGTSTP, &sigTstpHandler, NULL);
   //-----------
+}
+
+
+int main(int argc, char *argv[]){
+  ctrl_init();
   
-  printf("Usage: tb.exe <task name> \n");
-  printf("Usage:     run config file is <task name>.param\n");
-  printf("Usage:          off: switch HV off and exit\n");
+  printf("Usage: ./tb <task name> \n");
+  printf("Usage:      run config file is <task name>.param\n");
+  printf("Usage:      off: switch HV off and exit\n");
   
   if(argc<2){
     printf("task name is missing, stop.\n");
@@ -137,24 +182,31 @@ int main(int argc, char *argv[]){
   printf("preparing environment...\n");
   struct stat st;
   if(0==stat(task,&st)){
-    printf("%s already exists, please check \n",task);
-    return 1;
+    printf("%s already exists\n",task);
+    int runlast=getlastrunnumber(task);
+    if(runlast>=0)g_runnumber+=1;
+    else g_runnumber=0;
+  }
+  else{
+    g_runnumber=0;
+    
+    if(0!=mkdir(task,0777)){
+      printf("cannot create directory %s, stop\n",task);
+      return 1;
+    }
   }
   
-  if(0!=mkdir(task,0777)){
-    printf("cannot create directory %s, stop\n",task);
-    return 1;
-  }
-  
-  if(0!=chdir(task)){
+  /*if(0!=chdir(task)){
     printf("cannot cd to %s, stop\n",task);
     return 1;
-  }
+    }*/
   
-  g_rp.write(fnam_param);
+  char fnam_param_task[256];
+  sprintf(fnam_param_task,"%s/%s_%2.2d.param",task,task,g_runnumber);
+  g_rp.write(fnam_param_task);
   
   char rootfilename[128];
-  sprintf(rootfilename,"%s.root",task);
+  sprintf(rootfilename,"%s/%s.root",task,task);
   printf("opening root file %s ...",rootfilename);
   openROOTfile(rootfilename, &g_rp);
   printf(" ... done\n");
@@ -174,7 +226,7 @@ int main(int argc, char *argv[]){
   }
   
   if(0!=digitizer_start()){
-    printf("%s: error in vme_start\n",__func__);
+    printf("%s: error in digitizer_start\n",__func__);
     return 1;
   }
   
