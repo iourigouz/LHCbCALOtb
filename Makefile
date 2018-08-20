@@ -16,7 +16,7 @@ SOFLAGS  = -shared -Wl,-soname,
 
 NAME     = tb
 
-SOURCE := tb.cpp ntp.cpp runparam.cpp
+SOURCE := tb.cpp ntp.cpp runparam.cpp Lock.cpp
 SOURCE += specs_operations.cpp vme_operations.cpp
 SOURCE += digitizer_operations.cpp wavedump_functions.cpp 
 OBJECTS := $(patsubst %.cpp,%.o,$(SOURCE))

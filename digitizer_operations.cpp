@@ -190,9 +190,9 @@ int digitizer_start(){
 
 int digitizer_stop(){
   int ret=0;
-  ret=CAEN_DGTZ_SWStartAcquisition(DHandle);
+  ret=CAEN_DGTZ_SWStopAcquisition(DHandle);
   if(ret!=CAEN_DGTZ_Success){
-    printf("%s WARNING: SWStartAcquisition returns %d\n",__func__,ret);
+    printf("%s WARNING: SWStopAcquisition returns %d\n",__func__,ret);
   }
   
   return ret;
@@ -200,6 +200,25 @@ int digitizer_stop(){
 
 int digitizer_read(){
   CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
+  
+  uint32_t readout_status=0;
+  ret=CAEN_DGTZ_ReadRegister(DHandle, 0xEF04, &readout_status);
+  if(ret!=CAEN_DGTZ_Success){
+    printf("%s: error %d in ReadRegister(0xEF04)\n",__func__,ret);
+    return ret;
+  }
+  int cnt=0;
+  while(0==(readout_status&0x1)){
+    ret=CAEN_DGTZ_ReadRegister(DHandle, 0xEF04, &readout_status);
+    if(ret!=CAEN_DGTZ_Success){
+      printf("%s: error %d in ReadRegister(0xEF04)\n",__func__,ret);
+      return ret;
+    }
+    cnt++;
+    if(cnt>1000)break;
+  }
+  if(cnt>0 && cnt<=1000)printf("%s: event ready after %d ReadRegister(0xEF04)\n",__func__,cnt);
+  else if(cnt>1000)printf("%s: WARNING NO EVENT after %d ReadRegister(0xEF04)!!!!\n",__func__,cnt);
   
   ret=CAEN_DGTZ_ReadData(DHandle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, DBuffer, &DBufferSize);
   if(ret!=CAEN_DGTZ_Success){

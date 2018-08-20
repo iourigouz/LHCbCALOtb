@@ -295,8 +295,24 @@ void runParam::read(const char* fnam){
     }
   }
   fclose(f);
-    
+  
+  // now copy vme variables
+  vme_adc1=    VME_ADC1;    
+  vme_adc2=    VME_ADC2;    
+  vme_adc3=    VME_ADC3;    
+  vme_corbo=   VME_CORBO;   
+  vme_crb_ch=  VME_CRB_CH;  
+  vme_crb_ch2= VME_CRB_CH2; 
+  vme_v259=    VME_V259;    
+  vme_v1290=   VME_V1290;   
+  vme_v260=    VME_V260;    
+  vme_v812=    VME_V812;    
+  vme_v812_2=  VME_V812_2;  
+  vme_crb_irq= VME_CRB_IRQ; 
+  vme_crb_vec= VME_CRB_VEC; 
+  
   // check whether the run parameters make sense: 
   // at least one PMT name is present, and its HV >0
   if(0!=nchans)init=true;
+  //printf("nchans=%d\n",nchans);
 }

@@ -30,7 +30,7 @@ extern uint32_t VME_V260;     // 0x00DD00   CAEN scaler
 extern uint32_t VME_V812;     // 0x880000   CAEN V812 constant fraction discriminator #1
 extern uint32_t VME_V812_2;   // 0x990000   CAEN V812 constant fraction discriminator #2
 extern uint32_t VME_CRB_IRQ;  // 3          VME IRQ ised in CORBO
-extern uint32_t VME_CRB_VEC;  // 0x85       interrpt vector ised in CORBO
+extern uint32_t VME_CRB_VEC;  // 0x85       interrupt vector ised in CORBO
 
 // connections
 
@@ -46,6 +46,10 @@ class runParam {
   int nLEDs;
   int LEDchan[MAXLEDS];
   double ULED[MAXLEDS];
+  
+  uint32_t vme_adc1, vme_adc2, vme_adc3;
+  uint32_t vme_corbo, vme_crb_ch, vme_crb_ch2, vme_crb_irq, vme_crb_vec;
+  uint32_t vme_v259, vme_v1290, vme_v260, vme_v812, vme_v812_2;
   
   int nchans;
   char chnam[MAXCHANS][MAXNAMELENGTH];

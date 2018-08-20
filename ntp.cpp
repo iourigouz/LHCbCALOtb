@@ -233,7 +233,18 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
       }
       else if(3==g_rp.datatype[i]){ // DIG
         int JCH=g_rp.datachan[i];
-        if(JCH>7)JCH+=1; // account for tr0 which is inserted as #8
+        if(g_rp.datachan[i]==20){
+          JCH=8;// tr0 digitized by chip 0
+          printf("tr0 digitized by chip 0 is connected to ch 8\n");
+        }
+        else if(g_rp.datachan[i]==21){
+          JCH=17;// tr0 digitized by chip 1
+          printf("tr0 digitized by chip 1 is connected to ch 17\n");
+        }
+        else if(g_rp.datachan[i]>7){
+          JCH+=1; // account for tr0 which is inserted as #8
+          printf("input %2d is connected to ch %d\n",g_rp.datachan[i],JCH);
+        }
         g_used742[JCH]=1;
         sprintf(nam,"%s_nd%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
         sprintf(fmt,"%s/I",nam);
@@ -381,52 +392,84 @@ void fill_all(){
     }
     
     if(g_dwc1left>=0 && g_dwc1right>=0){
-      if(g_nTDC[g_dwc1left]>0 && g_nTDC[g_dwc1right]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc1x_LED)g_hdwc1x_LED->Fill(g_tTDC[g_dwc1left][0]-g_tTDC[g_dwc1right][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc1x_SIG)g_hdwc1x_SIG->Fill(g_tTDC[g_dwc1left][0]-g_tTDC[g_dwc1right][0]);
+      int c1=g_rp.datachan[g_dwc1left];
+      int c2=g_rp.datachan[g_dwc1right];
+      TH1I* hLED=g_hdwc1x_LED;
+      TH1I* hSIG=g_hdwc1x_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     if(g_dwc2left>=0 && g_dwc2right>=0){
-      if(g_nTDC[g_dwc2left]>0 && g_nTDC[g_dwc2right]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc2x_LED)g_hdwc2x_LED->Fill(g_tTDC[g_dwc2left][0]-g_tTDC[g_dwc2right][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc2x_SIG)g_hdwc2x_SIG->Fill(g_tTDC[g_dwc2left][0]-g_tTDC[g_dwc2right][0]);
+      int c1=g_rp.datachan[g_dwc2left];
+      int c2=g_rp.datachan[g_dwc2right];
+      TH1I* hLED=g_hdwc2x_LED;
+      TH1I* hSIG=g_hdwc2x_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     if(g_dwc3left>=0 && g_dwc3right>=0){
-      if(g_nTDC[g_dwc3left]>0 && g_nTDC[g_dwc3right]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc3x_LED)g_hdwc3x_LED->Fill(g_tTDC[g_dwc3left][0]-g_tTDC[g_dwc3right][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc3x_SIG)g_hdwc3x_SIG->Fill(g_tTDC[g_dwc3left][0]-g_tTDC[g_dwc3right][0]);
+      int c1=g_rp.datachan[g_dwc3left];
+      int c2=g_rp.datachan[g_dwc3right];
+      TH1I* hLED=g_hdwc3x_LED;
+      TH1I* hSIG=g_hdwc3x_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     if(g_dwc4left>=0 && g_dwc4right>=0){
-      if(g_nTDC[g_dwc4left]>0 && g_nTDC[g_dwc4right]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc4x_LED)g_hdwc4x_LED->Fill(g_tTDC[g_dwc4left][0]-g_tTDC[g_dwc4right][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc4x_SIG)g_hdwc4x_SIG->Fill(g_tTDC[g_dwc4left][0]-g_tTDC[g_dwc4right][0]);
+      int c1=g_rp.datachan[g_dwc4left];
+      int c2=g_rp.datachan[g_dwc4right];
+      TH1I* hLED=g_hdwc4x_LED;
+      TH1I* hSIG=g_hdwc4x_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     
     if(g_dwc1up>=0 && g_dwc1down>=0){
-      if(g_nTDC[g_dwc1up]>0 && g_nTDC[g_dwc1down]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc1y_LED)g_hdwc1y_LED->Fill(g_tTDC[g_dwc1up][0]-g_tTDC[g_dwc1down][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc1y_SIG)g_hdwc1y_SIG->Fill(g_tTDC[g_dwc1up][0]-g_tTDC[g_dwc1down][0]);
+      int c1=g_rp.datachan[g_dwc1up];
+      int c2=g_rp.datachan[g_dwc1down];
+      TH1I* hLED=g_hdwc1y_LED;
+      TH1I* hSIG=g_hdwc1y_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     if(g_dwc2up>=0 && g_dwc2down>=0){
-      if(g_nTDC[g_dwc2up]>0 && g_nTDC[g_dwc2down]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc2y_LED)g_hdwc2y_LED->Fill(g_tTDC[g_dwc2up][0]-g_tTDC[g_dwc2down][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc2y_SIG)g_hdwc2y_SIG->Fill(g_tTDC[g_dwc2up][0]-g_tTDC[g_dwc2down][0]);
+      int c1=g_rp.datachan[g_dwc2up];
+      int c2=g_rp.datachan[g_dwc2down];
+      TH1I* hLED=g_hdwc2y_LED;
+      TH1I* hSIG=g_hdwc2y_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     if(g_dwc3up>=0 && g_dwc3down>=0){
-      if(g_nTDC[g_dwc3up]>0 && g_nTDC[g_dwc3down]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc3y_LED)g_hdwc3y_LED->Fill(g_tTDC[g_dwc3up][0]-g_tTDC[g_dwc3down][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc3y_SIG)g_hdwc3y_SIG->Fill(g_tTDC[g_dwc3up][0]-g_tTDC[g_dwc3down][0]);
+      int c1=g_rp.datachan[g_dwc3up];
+      int c2=g_rp.datachan[g_dwc3down];
+      TH1I* hLED=g_hdwc3y_LED;
+      TH1I* hSIG=g_hdwc3y_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     if(g_dwc4up>=0 && g_dwc4down>=0){
-      if(g_nTDC[g_dwc4up]>0 && g_nTDC[g_dwc4down]>0){
-        if(g_rp.LEDpatt==g_pattern && 0!=g_hdwc4y_LED)g_hdwc4y_LED->Fill(g_tTDC[g_dwc4up][0]-g_tTDC[g_dwc4down][0]);
-        else if(g_rp.SIGpatt==g_pattern && 0!=g_hdwc4y_SIG)g_hdwc4y_SIG->Fill(g_tTDC[g_dwc4up][0]-g_tTDC[g_dwc4down][0]);
+      int c1=g_rp.datachan[g_dwc4up];
+      int c2=g_rp.datachan[g_dwc4down];
+      TH1I* hLED=g_hdwc4y_LED;
+      TH1I* hSIG=g_hdwc4y_SIG;
+      if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        if(g_rp.LEDpatt==g_pattern && 0!=hLED)hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
+        else if(g_rp.SIGpatt==g_pattern && 0!=hSIG)hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
       }
     }
     

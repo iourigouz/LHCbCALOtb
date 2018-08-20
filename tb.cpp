@@ -23,7 +23,6 @@
 #include "TH1D.h"
 #include "TTree.h"
 
-#include "read_data.h"
 #include "specs_operations.h"
 #include "vme_operations.h"
 #include "digitizer_operations.h"
@@ -46,7 +45,7 @@ int getlastrunnumber(const char* task){
   int retval=-1;
   
   struct stat st;
-  if(0==stat(task,&st)) return -1;
+  if(0!=stat(task,&st)) return -1;
   
   if( (dp = opendir(task)) == NULL) {
     fprintf(stderr, "%s: opendir error, %s: %s\n", __func__, task, strerror(errno));
@@ -184,7 +183,7 @@ int main(int argc, char *argv[]){
   if(0==stat(task,&st)){
     printf("%s already exists\n",task);
     int runlast=getlastrunnumber(task);
-    if(runlast>=0)g_runnumber+=1;
+    if(runlast>=0)g_runnumber=runlast+1;
     else g_runnumber=0;
   }
   else{
@@ -206,7 +205,7 @@ int main(int argc, char *argv[]){
   g_rp.write(fnam_param_task);
   
   char rootfilename[128];
-  sprintf(rootfilename,"%s/%s.root",task,task);
+  sprintf(rootfilename,"%s/%s_%2.2d.root",task,task,g_runnumber);
   printf("opening root file %s ...",rootfilename);
   openROOTfile(rootfilename, &g_rp);
   printf(" ... done\n");
@@ -240,7 +239,7 @@ int main(int argc, char *argv[]){
       if(0!=vme_read_pattern()) printf("%s ev%6d: WARNING error vme_read_pattern\n",__func__,iev);
       if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC\n",__func__,iev);
       if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,iev);
-      usleep(1000);
+      //usleep(1000);
       if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,iev);
       if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,iev);
       
