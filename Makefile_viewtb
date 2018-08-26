@@ -7,7 +7,7 @@ LIBRARIES = -L$(ROOTSYS)/lib -L$(DIM_DIR)/linux -lCore -lCint -lHist -lGraf -lGr
 LDFLAGS  = $(LIBRARIES)
 SOFLAGS  = -shared -Wl,-soname,
 
-LINKDEF  = LinkDef.h
+LINKDEF  = LinkDef_viewtb.h
 NAME     = viewtb
 
 TB_DIR = ../tb
