@@ -1,0 +1,47 @@
+CXX      = g++
+CPPFLAGS = -I$(ROOTSYS)/include -I$(DIM_DIR)/dim 
+#CXXFLAGS = -O -Wall -Wno-deprecated -fPIC -g
+CXXFLAGS = -O0 -Wall -fPIC -g -gdwarf-2 
+LIBRARIES = -L$(ROOTSYS)/lib -L$(DIM_DIR)/linux -lCore -lCint -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lGui -ldim -pthread -lm -ldl -rdynamic -lstdc++
+
+LDFLAGS  = $(LIBRARIES)
+SOFLAGS  = -shared -Wl,-soname,
+
+LINKDEF  = LinkDef.h
+NAME     = viewtb
+
+TB_DIR = ../tb
+CPPFLAGS += -I$(TB_DIR) 
+
+#SOURCE := $(filter-out $(NAME)Cint.cpp, $(wildcard *.cpp))
+SOURCE := $(NAME).cpp MyMainFrame.cpp getVal.cpp
+OBJS := $(patsubst %.cpp,%.o,$(SOURCE))
+OBJECTS := $(patsubst $(TB_DIR)/%.o,%.o,$(OBJS))
+
+CLASSINCLUDES = MyMainFrame.h getVal.h
+
+all: $(NAME)
+
+#include $(SOURCE:.cc=.d)
+
+$(NAME):  $(OBJECTS) $(NAME)Cint.o
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(NAME)Cint.o \
+	-o $(NAME)
+
+
+$(NAME)Cint.o: $(CLASSINCLUDES) $(LINKDEF)
+	@rm -f $(NAME)Cint.cpp
+	@echo Generating dictionary
+	rootcint -f $(NAME)Cint.cpp -c $(CLASSINCLUDES) $(LINKDEF)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(NAME)Cint.cpp -c
+
+%.o: %.cpp
+	@echo Makefile compiling $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+
+%.o: $(TB_DIR)/%.cpp
+	@echo Makefile compiling $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(NAME) $(OBJECTS) $(NAME)Cint.* lib$(NAME).so *.d core *~
