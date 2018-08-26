@@ -45,6 +45,8 @@ bool g_INT_block_mode=true;
 
 int specs_open(int iportDAC, int iportINT, int islaveDAC, int islaveINT)
 {
+  if(!g_rp.SPECS_used)return 0;
+  
   int res;
 
   SpecsError theSpError; 
@@ -63,6 +65,8 @@ int specs_open(int iportDAC, int iportINT, int islaveDAC, int islaveINT)
 }
 
 int specs_readINT(int iconn, int rng, int nchan, int* currs){
+  if(!g_rp.SPECS_used)return 0;
+  
   if(!g_INT_installed)return 0;
   if(iconn<0 || iconn>12)return 0;
   
@@ -115,6 +119,8 @@ int specs_readINT(int iconn, int rng, int nchan, int* currs){
 }
 
 int specs_setINTRange(int iconn, int integ, int rng){
+  if(!g_rp.SPECS_used)return 0;
+  
   if(!g_INT_installed)return 0;
   
   SpecsError theSpError;
@@ -144,6 +150,8 @@ int specs_setINTRange(int iconn, int integ, int rng){
 }
 
 int specs_setINTDAC(int idac){
+  if(!g_rp.SPECS_used)return 0;
+  
   if(!g_INT_installed)return 0;
   
   SpecsError theSpError;
@@ -165,6 +173,8 @@ int specs_setINTDAC(int idac){
 }
 
 int specs_init_INT(int iportINT, int islaveINT){
+  if(!g_rp.SPECS_used)return 0;
+  
   if(!g_INT_installed)return 0;
   
   SpecsError theSpError;
@@ -228,6 +238,8 @@ int specs_init_INT(int iportINT, int islaveINT){
 }
 
 int specs_init_DAC(int iportDAC, int islaveDAC){
+  if(!g_rp.SPECS_used)return 0;
+  
   SpecsError theSpError;
   
   if(0==g_nSpecs){
@@ -307,6 +319,8 @@ int specs_init_DAC(int iportDAC, int islaveDAC){
 
 
 int specs_close(){
+  if(!g_rp.SPECS_used)return 0;
+  
   int ret=0;
   SpecsError theSpError; 
   
@@ -326,6 +340,8 @@ int specs_close(){
 }
 
 int specs_writeDAC(int* DAC){
+  if(!g_rp.SPECS_used)return 0;
+  
   for(int i=0; i<12; ++i){
     int res=specs_setDACchan(i,DAC[i]);
     if(0!=res){printf("%s: cannot write %d into chan %d\n",__func__,DAC[i],i);return -1;}
@@ -334,6 +350,8 @@ int specs_writeDAC(int* DAC){
 }
 
 int specs_setDACchan(int ichan, int iDAC){
+  if(!g_rp.SPECS_used)return 0;
+  
   if(ichan<0 || ichan>215)return 0;
 
   unsigned char ch=ichan;
@@ -362,6 +380,8 @@ int specs_setDACchan(int ichan, int iDAC){
 }
 
 int write_HV(){
+  if(!g_rp.SPECS_used)return 0;
+  
   int res=0;
   for(int i=0; i<MAXCHANS; ++i){
     if(g_rp.HVchan[i]>=0){
@@ -374,6 +394,8 @@ int write_HV(){
 }
 
 int write_ULED(){
+  if(!g_rp.SPECS_used)return 0;
+  
   int res=0;
   for(int i=0; i<MAXLEDS; ++i){
     int iLED=g_rp.ULED[i] * 4095/5;

@@ -8,7 +8,7 @@
 #define NADCCHAN 24
 #define NTDCCHAN 32
 #define NTDCMAXHITS 10
-#define NDT5742CHAN 20
+#define NDT5742CHAN 32
 #define NDT5742SAMPL 2048
 
 #define MAXCHANS 100
@@ -38,7 +38,7 @@ extern uint32_t VME_CRB_VEC;  // 0x85       interrupt vector ised in CORBO
 class runParam {
  public:
   bool init;
-  double printperiod;
+  double printperiod, writeperiod, cmdperiod, updperiod;
   int HVmaster, HVslave;
   
   int PEDpatt, LEDpatt, SIGpatt;
@@ -58,6 +58,11 @@ class runParam {
   int datatype[MAXCHANS];  // 1=ADC; 2=TDC; 3=DIG
   int datachan[MAXCHANS];
   
+  bool SPECS_used;
+  bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
+  bool TDC_used;
+  bool digitizer_used;
+  
  public:
   runParam();
   
@@ -68,6 +73,7 @@ class runParam {
   void write(const char* fnam);
   void read(const char* fnam);
   int findch(const char* nam);
+  int findch(const char* typ, int ch);
 };
 
 typedef runParam RUNPARAM;

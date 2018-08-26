@@ -56,10 +56,21 @@ int runParam::findch(const char* nam){
   return -1;
 }
 
+int runParam::findch(const char* typ, int ch){
+  const char* typs[4]={"x","ADC","TDC","DIG"};
+  int ityp=0;
+  for(int j=0; j<4; ++j)    if(0==strcmp(typ,typs[j]))ityp=j;
+  
+  for(int i=0; i<nchans; ++i){
+    if(ityp==datatype[i] && ch==datachan[i])return i;
+  }
+  return -1;
+}
+
 void runParam::reset(){
   init=false;
   
-  printperiod=1;
+  printperiod=writeperiod=cmdperiod=updperiod=1; // in seconds!!!
   
   HVmaster=HVslave=0; // both illegal, HVmaster should be 1...4, HVslave 1...31
   
@@ -77,7 +88,13 @@ void runParam::reset(){
   memset(chnam,0,sizeof(chnam));
   for(int ich=0; ich<sizeof(HVchan)/sizeof(int); ++ich)HVchan[ich]=-1; //  all illegal
   memset(datatype,0,sizeof(datatype));
-  memset(datachan,0,sizeof(datachan));    
+  memset(datachan,0,sizeof(datachan));
+  
+  SPECS_used=false;
+  ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
+  VME_ADC1 = VME_ADC2 = VME_ADC3 = 0;
+  digitizer_used=false;
+
 }
   
 void runParam::setChanHV(char* nam, int ich, double v){
@@ -171,6 +188,9 @@ void runParam::write(const char* fnam){
   fprintf(f,"LEDPATT %d\n",LEDpatt);
   fprintf(f,"SIGPATT %d\n",SIGpatt);
   fprintf(f,"PRINTPERIOD %d\n",printperiod);
+  fprintf(f,"WRITEPERIOD %d\n",writeperiod);
+  fprintf(f,"CMDPERIOD %d\n",cmdperiod);
+  fprintf(f,"UPDPERIOD %d\n",updperiod);
   
   fprintf(f,"\n// LEDCHAN <iLED> <LED chan> <U_LED> \n");
   for(int i=0; i<sizeof(LEDchan)/sizeof(int); ++i){
@@ -292,6 +312,15 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"PRINTPERIOD")){
         if(nit>1 && nit1>0)printperiod=n;
       }
+      else if(0==strcmp(what,"WRITEPERIOD")){
+        if(nit>1 && nit1>0)writeperiod=n;
+      }
+      else if(0==strcmp(what,"CMDPERIOD")){
+        if(nit>1 && nit1>0)cmdperiod=n;
+      }
+      else if(0==strcmp(what,"UPDPERIOD")){
+        if(nit>1 && nit1>0)updperiod=n;
+      }
     }
   }
   fclose(f);
@@ -315,4 +344,28 @@ void runParam::read(const char* fnam){
   // at least one PMT name is present, and its HV >0
   if(0!=nchans)init=true;
   //printf("nchans=%d\n",nchans);
+  
+  // now inventory: what is used
+  for(int i=0; i<sizeof(LEDchan)/sizeof(int); ++i){  // 1) SPECS
+    if(LEDchan[i]>=0)SPECS_used=true;
+  }
+  for(int ich=0; ich<nchans; ++ich){  // 2) ADC
+    if(HVchan[ich]>=0)SPECS_used=true;
+    if(1==datatype[ich]){// 2) ADC
+      if(datachan[ich]>=0 && datachan[ich]<8)ADC1_used=true;
+      else if(datachan[ich]>=8 && datachan[ich]<16)ADC2_used=true;
+      else if(datachan[ich]>=16 && datachan[ich]<24)ADC3_used=true;
+      else printf("%s WARNING: %s bad ADC channel number %d\n",__func__,&chnam[ich][0],datachan[ich]);
+        
+    }
+    else if (2==datatype[ich]){// 3) TDC
+      if(datachan[ich]>=0 && datachan[ich]<32)TDC_used=true;
+      else printf("%s WARNING: %s bad TDC channel number %d\n",__func__,&chnam[ich][0],datachan[ich]);
+    }
+    else if(3==datatype[ich]){// 4) digitizer
+      if( (datachan[ich]>=0 && datachan[ich]<16) || 20==datachan[ich] || 21==datachan[ich])digitizer_used=true;
+      else printf("%s WARNING: %s bad digitizer channel number %d\n",__func__,&chnam[ich][0],datachan[ich]);
+    }
+  }
+  if(ADC1_used || ADC2_used || ADC3_used) ADC_used=true;
 }

@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+extern bool g_vme_initialized;
 
 int vme_init(int pulse_len=6); // + configure pulsers for LED (Pulser A) and PED (Pulser B)
 

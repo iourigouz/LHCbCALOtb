@@ -23,8 +23,11 @@
 #include "ntp.h"
 #include "vme_operations.h"
 
+bool g_ADC1_installed=true;
 bool g_ADC2_installed=true;
 bool g_ADC3_installed=true;
+bool g_TDC_installed=true;
+
 bool g_vme_initialized=false;
 
 int32_t       BHandle;
@@ -879,6 +882,11 @@ int vme_init(int pulse_len){
   short         Device=0;
   int res;
   
+  g_ADC1_installed=true;
+  g_ADC2_installed=true;
+  g_ADC3_installed=true;
+  
+  if(VME_ADC1<=0)g_ADC1_installed=false;
   if(VME_ADC2<=0)g_ADC2_installed=false;
   if(VME_ADC3<=0)g_ADC3_installed=false;
   
@@ -913,10 +921,15 @@ int vme_init(int pulse_len){
   res=V259_clear(VME_V259);
   if(cvSuccess!=res){printf("%s: Error clear V259\n", __func__);return res;}
   
-  res=ADC_clear(VME_ADC1);
-  if(cvSuccess!=res){printf("%s: Error clear ADC1\n", __func__);return res;}
+  if(g_ADC1_installed && g_rp.ADC1_used){
+    res=ADC_clear(VME_ADC1);
+    if(cvSuccess!=res){
+      printf("%s: Error clear ADC1: probably not installed\n", __func__);
+      g_ADC1_installed=false;
+    }
+  }
   
-  if(g_ADC2_installed){
+  if(g_ADC2_installed && g_rp.ADC2_used){
     res=ADC_clear(VME_ADC2);
     if(cvSuccess!=res){
       printf("%s: Error clear ADC2: probably not installed\n", __func__);
@@ -924,7 +937,7 @@ int vme_init(int pulse_len){
     }
   }
   
-  if(g_ADC3_installed){
+  if(g_ADC3_installed && g_rp.ADC3_used){
     res=ADC_clear(VME_ADC3);
     if(cvSuccess!=res){
       printf("%s: Error clear ADC3: probably not installed\n", __func__);
@@ -932,8 +945,13 @@ int vme_init(int pulse_len){
     }
   }
   
-  res=V1290_init(VME_V1290);
-  if(cvSuccess!=res){printf("%s: Error init TDC\n", __func__);return res;}
+  if(g_TDC_installed && g_rp.TDC_used){
+    res=V1290_init(VME_V1290);
+    if(cvSuccess!=res){
+      printf("%s: Error init TDC: probably not installed\n", __func__);
+      g_TDC_installed=false;
+    }
+  }
   
   res=CORBO_init(VME_CORBO);
   if(cvSuccess!=res){printf("%s: Error init CORBO\n", __func__);return res;}
@@ -985,41 +1003,47 @@ int vme_read_pattern(){
 }
 
 int vme_readTDC(){
-  int ndata=0;
-  uint32_t data[2048];
-  int res=V1290_read_buffer(VME_V1290, 1024, ndata, data);
-  if(cvSuccess!=res){
-    V1290_print_buffer(ndata,data);
-    ndata=0;
-    g_nclear++;
-    //CORBO_clear(VME_CORBO,VME_CRB_CH);
-    memset(g_nTDC,0,sizeof(g_nTDC));
-    memset(g_tTDC,0,sizeof(g_tTDC));
-    g_tTDCtrig=0;
-    return -1;
+  if(g_TDC_installed && g_rp.TDC_used){
+    int ndata=0;
+    uint32_t data[2048];
+    int res=V1290_read_buffer(VME_V1290, 1024, ndata, data);
+    if(cvSuccess!=res){
+      V1290_print_buffer(ndata,data);
+      ndata=0;
+      g_nTDCclear++;
+      //CORBO_clear(VME_CORBO,VME_CRB_CH);
+      memset(g_nTDC,0,sizeof(g_nTDC));
+      memset(g_tTDC,0,sizeof(g_tTDC));
+      g_tTDCtrig=0;
+      return -1;
+    }
+    //print_buffer_TDC(ndata,data);
+    V1290_unpack_buffer(ndata,data);
   }
-  //print_buffer_TDC(ndata,data);
-  V1290_unpack_buffer(ndata,data);
   return 0;
 }
 
 int vme_readADC(){
   uint16_t data[16];
   int evcnt;
+  int res=0;
   
-  int res=ADC_read_data(VME_ADC1, evcnt, data);
-  //int res=ADC_read_data1(VME_ADC1, evcnt, data);
-  if(0!=res){printf("%s: error reading ADC1\n",__func__);return -1;}
-  
-  if(1==evcnt){
-    for(int i=0; i<8; ++i)g_ADC[i]=data[i];
+  if(g_ADC1_installed && g_rp.ADC1_used){
+    res=ADC_read_data(VME_ADC1, evcnt, data);
+    if(0!=res){
+      printf("%s: error reading ADC1\n",__func__);
+      return -1;
+    }
+    
+    if(1==evcnt){
+      for(int i=0; i<8; ++i)g_ADC[i]=data[i];
+    }
+    else if(evcnt<=0){printf("%s: no data from ADC1\n",__func__);return -1;}
+    else if(evcnt>1) {printf("%s: %d ev in ADC1\n",__func__,evcnt);return -1;}
   }
-  else if(evcnt<=0){printf("%s: no data from ADC1\n",__func__);return -1;}
-  else if(evcnt>1) {printf("%s: %d ev in ADC1\n",__func__,evcnt);return -1;}
   
-  if(g_ADC2_installed){
+  if(g_ADC2_installed && g_rp.ADC2_used){
     res=ADC_read_data(VME_ADC2, evcnt, data);
-    //res=ADC_read_data1(VME_ADC2, evcnt, data);
     if(0!=res){
       g_ADC2_installed=false;
       return 0;
@@ -1032,7 +1056,7 @@ int vme_readADC(){
     else if(evcnt>1) {printf("%s: %d ev in ADC2\n",__func__,evcnt);return -1;}
   }
 
-  if(g_ADC3_installed){
+  if(g_ADC3_installed && g_rp.ADC3_used){
     res=ADC_read_data(VME_ADC3, evcnt, data);
     //res=ADC_read_data1(VME_ADC3, evcnt, data);
     if(0!=res){
@@ -1057,7 +1081,6 @@ int vme_close(){
     res=CAENVME_End(BHandle);
     if(cvSuccess!=res){printf("%s: Error in CAENVME_End\n", __func__); return res;}
     g_vme_initialized=false;
-    g_ADC2_installed=true;
   }
   
   return 0;
@@ -1092,19 +1115,21 @@ int vme_start(){
   }
   usleep(100000);
   
-  if( cvSuccess!=(c_res=ADC_clear(VME_ADC1)) ){
-    printf("%s: clear ADC1 returns %d\n",__func__,c_res);
-    return c_res;
+  if(g_ADC1_installed && g_rp.ADC1_used){
+    if( cvSuccess!=(c_res=ADC_clear(VME_ADC1)) ){
+      printf("%s: clear ADC1 returns %d\n",__func__,c_res);
+      return c_res;
+    }
   }
   
-  if(g_ADC2_installed){
+  if(g_ADC2_installed && g_rp.ADC2_used){
     if( cvSuccess!=(c_res=ADC_clear(VME_ADC2)) ){
       printf("%s: clear ADC2 returns %d\n",__func__,c_res);
       return c_res;
     }
   }
   
-  if(g_ADC3_installed){
+  if(g_ADC3_installed && g_rp.ADC3_used){
     if( cvSuccess!=(c_res=ADC_clear(VME_ADC3)) ){
       printf("%s: clear ADC3 returns %d\n",__func__,c_res);
       return c_res;

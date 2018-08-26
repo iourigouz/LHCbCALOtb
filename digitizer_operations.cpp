@@ -11,10 +11,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "runparam.h"
 #include "wavedump_functions.h"
 #include "digitizer_operations.h"
 
 #include "ntp.h"
+
+bool g_digitizer_initialized=false;
 
 int       DHandle;
 
@@ -32,6 +35,9 @@ CAEN_DGTZ_X742_EVENT_t       *Event742=NULL;
 WaveDumpConfig_t WDcfg;
 
 int digitizer_init(char* config_name){
+  if(!g_rp.digitizer_used) return 0;
+  if(g_digitizer_initialized)return 0;
+  
   //CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
   int ret = CAEN_DGTZ_Success;
   
@@ -123,17 +129,26 @@ int digitizer_init(char* config_name){
   }
       
   // allocate event buffer
-  ret = CAEN_DGTZ_AllocateEvent(DHandle, (void**)&Event742);
-  if(ret!=CAEN_DGTZ_Success){
-    printf("%s WARNING: AllocateEvent returns %d\n",__func__,ret);
-    goto Close;
+  if(!Event742){
+    ret = CAEN_DGTZ_AllocateEvent(DHandle, (void**)&Event742);
+    if(ret!=CAEN_DGTZ_Success){
+      printf("%s WARNING: AllocateEvent returns %d\n",__func__,ret);
+      goto Close;
+    }
   }
+  else printf("%s: event buffer already allocated\n",__func__);
+  
  // allocate readout buffer
-  ret = CAEN_DGTZ_MallocReadoutBuffer(DHandle, &DBuffer,&DBufAllocatedSize); /* WARNING: This must be done after the digitizer programming */
-  if(ret!=CAEN_DGTZ_Success){
-    printf("%s WARNING: MallocReadoutBuffer returns %d\n",__func__,ret);
-    goto Close;
+  if(!DBuffer){
+    ret = CAEN_DGTZ_MallocReadoutBuffer(DHandle, &DBuffer,&DBufAllocatedSize); /* WARNING: This must be done after the digitizer programming */
+    if(ret!=CAEN_DGTZ_Success){
+      printf("%s WARNING: MallocReadoutBuffer returns %d\n",__func__,ret);
+      goto Close;
+    }
   }
+  else printf("%s: readout buffer already allocated\n",__func__);
+  
+  g_digitizer_initialized=true;
   
   return ret;
 
@@ -143,26 +158,33 @@ int digitizer_init(char* config_name){
 }
 
 int digitizer_close(){
+  if(!g_rp.digitizer_used) return 0;
+  if(!g_digitizer_initialized)return 0;
+  
   CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
   
   ret=CAEN_DGTZ_FreeEvent(DHandle, (void**)&Event742); 
   if(ret!=CAEN_DGTZ_Success){
-    printf("%s: cannot deallocate event buffer\n",__func__);
+    printf("%s: WARNING FreeEvent returns %d\n",__func__,ret);
     return ret;
   }
   ret=CAEN_DGTZ_FreeReadoutBuffer(&DBuffer); 
   if(ret!=CAEN_DGTZ_Success){
-    printf("%s: cannot deallocate readout buffer\n",__func__);
+    printf("%s: WARNING FreeReadoutBuffer returns %d\n",__func__,ret);
     return ret;
   }
   ret=CAEN_DGTZ_CloseDigitizer (DHandle); 
   if(ret!=CAEN_DGTZ_Success){
-    printf("%s: cannot close digitizer\n",__func__);
+    printf("%s: WARNING CloseDigitizer returns %d\n",__func__,ret);
     return ret;
   }
+  g_digitizer_initialized=false;
+  return 0;
 }
 
 int digitizer_reset(){
+  if(!g_rp.digitizer_used) return 0;
+  
   CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Reset (DHandle); 
   if(ret!=CAEN_DGTZ_Success){
     printf("%s: error \n",__func__);
@@ -171,6 +193,8 @@ int digitizer_reset(){
 }
 
 int digitizer_clear(){
+  if(!g_rp.digitizer_used) return 0;
+  
   CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_ClearData (DHandle); 
   if(ret!=CAEN_DGTZ_Success){
     printf("%s: error \n",__func__);
@@ -179,6 +203,8 @@ int digitizer_clear(){
 }
 
 int digitizer_start(){
+  if(!g_rp.digitizer_used) return 0;
+  
   int ret=0;
   ret=CAEN_DGTZ_SWStartAcquisition(DHandle);
   if(ret!=CAEN_DGTZ_Success){
@@ -189,6 +215,8 @@ int digitizer_start(){
 }
 
 int digitizer_stop(){
+  if(!g_rp.digitizer_used) return 0;
+  
   int ret=0;
   ret=CAEN_DGTZ_SWStopAcquisition(DHandle);
   if(ret!=CAEN_DGTZ_Success){
@@ -199,6 +227,8 @@ int digitizer_stop(){
 }
 
 int digitizer_read(){
+  if(!g_rp.digitizer_used) return 0;
+  
   CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
   
   uint32_t readout_status=0;
@@ -217,8 +247,8 @@ int digitizer_read(){
     cnt++;
     if(cnt>1000)break;
   }
-  if(cnt>0 && cnt<=1000)printf("%s: event ready after %d ReadRegister(0xEF04)\n",__func__,cnt);
-  else if(cnt>1000)printf("%s: WARNING NO EVENT after %d ReadRegister(0xEF04)!!!!\n",__func__,cnt);
+  if(cnt>0 && cnt<=1000)printf("%s: event ready after %d ReadRegister(0xEF04)\n",__func__,cnt+1);
+  else if(cnt>1000)printf("%s: WARNING NO EVENT after %d ReadRegister(0xEF04)!!!!\n",__func__,cnt+1);
   
   ret=CAEN_DGTZ_ReadData(DHandle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, DBuffer, &DBufferSize);
   if(ret!=CAEN_DGTZ_Success){

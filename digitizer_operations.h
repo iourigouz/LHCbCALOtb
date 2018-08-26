@@ -1,5 +1,7 @@
 #pragma once
 
+extern bool g_digitizer_initialized;
+
 int digitizer_init(char* config_name);
 
 int digitizer_close();
