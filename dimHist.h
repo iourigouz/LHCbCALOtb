@@ -35,6 +35,29 @@ typedef struct dimHist{
     else return true;
   }
   
+  void Copy(dimHist& h){
+    this->Reset();
+    int maxbins=sizeof(cont)/sizeof(double);
+    
+    nbins=h.nbins;
+    if(nbins>maxbins)nbins=maxbins;
+    xmin=h.xmin;
+    xmax=h.xmax;
+    nentries=h.nentries;
+    mean=h.mean;
+    rms=h.rms;
+    strncpy(fmat,h.fmat,sizeof(fmat)-1);
+    strncpy(name,h.name,sizeof(name)-1);
+    strncpy(title,h.title,sizeof(title)-1);
+    for(int i=0; i<nbins; ++i)cont[i]=h.cont[i];
+  }
+  
+  void Subtract(dimHist& h){
+    if(!h.isUsed())return;
+    nentries-=h.nentries;
+    for(int i=0; i<nbins; ++i)cont[i]-=h.cont[i];
+  }
+  
   bool fill_TH1D(TH1D*& h){
     if(h){
       bool to_delete=false;
@@ -101,6 +124,36 @@ typedef struct dimStat{
     strncpy(fmat,"I:6;D:2;C:64;C:64;C:256",63);
   };
   
+  bool isUsed(){
+    return starttime>0;
+  }
+  
+  void Copy(dimStat& s){
+    this->Reset();
+    
+    irun=s.irun;
+    running=s.running;
+    ievt=s.ievt;
+    nsig=s.nsig;
+    nled=s.nled;
+    nped=s.nped;
+    starttime=s.starttime;
+    runtime=s.runtime;
+    strncpy(fmat,s.fmat,63);
+    strncpy(conf,s.conf,63);
+    strncpy(fnam,s.fnam,255);
+  }
+  
+  void Subtract(dimStat& s){
+    if(!s.isUsed())return;
+    ievt-=s.ievt;
+    nsig-=s.nsig;
+    nled-=s.nled;
+    nped-=s.nped;
+    starttime=s.starttime+s.runtime;
+    runtime-=s.runtime;
+  }
+  
 } DIMSTAT;
 
 int readline_strings(char* str, char separ, int nmax, char** s){// reads separated strings
@@ -150,6 +203,56 @@ typedef struct dimSummary{
     memset(erro,0,sizeof(erro));
     memset(binlabels,0,sizeof(binlabels));
   };
+  
+  void Copy(dimSummary& h){
+    this->Reset();
+    int maxbins=sizeof(cont)/sizeof(double)-2;
+    
+    nbins=h.nbins;
+    if(nbins>maxbins)nbins=maxbins;
+    xmin=h.xmin;
+    xmax=h.xmax;
+    nentries=h.nentries;
+    mean=h.mean;
+    rms=h.rms;
+    strncpy(fmat,h.fmat,sizeof(fmat)-1);
+    strncpy(name,h.name,sizeof(name)-1);
+    strncpy(title,h.title,sizeof(title)-1);
+    for(int i=0; i<nbins+2; ++i){
+      nent[i]=h.nent[i];
+      cont[i]=h.cont[i];
+      erro[i]=h.erro[i];
+    }
+    strncpy(binlabels,h.binlabels,sizeof(binlabels)-1);
+  }
+  
+  void Subtract(dimSummary& h){
+    if(!h.isUsed())return;
+    
+    nentries-=h.nentries;
+    for(int i=0; i<nbins+2; ++i){
+      if(nent[i]>0){
+        double s0=nent[i];
+        double s1=cont[i]*s0;
+        double s2=s0*(cont[i]*cont[i]+erro[i]*erro[i]);
+        double hs0=h.nent[i];
+        double hs1=h.cont[i]*hs0;
+        double hs2=hs0*(h.cont[i]*h.cont[i]+h.erro[i]*h.erro[i]);
+        s0-=hs0;
+        s1-=hs1;
+        s2-=hs2;
+        if(s0<0 || s2<0){
+          nent[i]=cont[i]=erro[i]=0;
+          break;
+        }
+        nent[i]=s0;
+        cont[i]=s1/s0;
+        erro[i]=s2/s0-cont[i]*cont[i];
+        if(erro[i]>=0)erro[i]=sqrt(erro[i]);
+        else erro[i]=0;
+      }
+    }
+  }
   
   bool isUsed(){
     if(strlen(name)==0)return false;
@@ -245,9 +348,9 @@ typedef struct dimSummary{
     memset(binlabels,0,sizeof(binlabels));
     for(int i=0; i<nbins+2; ++i){
       cont[i]=h->GetBinContent(i);
+      nent[i]=h->GetBinEntries(i);
+      erro[i]=h->GetBinError(i);
       if(i>0 && i<=nbins){
-        nent[i]=h->GetBinEntries(i);
-        erro[i]=h->GetBinError(i);
         strcat(binlabels,",");
         strcat(binlabels,h->GetXaxis()->GetBinLabel(i));
       }

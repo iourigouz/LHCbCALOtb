@@ -49,6 +49,7 @@ bool g_stoprun=false;
 
 bool g_draw_hist=false;
 bool g_auto_draw=false;
+bool g_subtract_ref=false;
 bool g_update_hists=false;
 
 char g_patt_selected[32]="";
@@ -59,10 +60,8 @@ char g_name_sel_prev[256]="";
 
 double g_t_startbutton_enabled=0;
 
-// DIM services
-
+// DIM stuff
 DIMSTAT g_d_status;
-
 //
 DIMSUMMARY g_d_summ_ADC_LED, g_d_summ_ADC_PED, g_d_summ_ADC_SIG;
 DIMSUMMARY g_d_summ_DIG_LED, g_d_summ_DIG_PED, g_d_summ_DIG_SIG;
@@ -82,12 +81,30 @@ DIMHIST g_d_DIG_PEDMAX[NDT5742CHAN];
 DIMHIST g_d_DIG_SIGPED[NDT5742CHAN];
 DIMHIST g_d_DIG_SIGMAX[NDT5742CHAN];
 // DIM dummies
-
 DIMSTAT g_d_status_dummy;
 DIMHIST g_d_hist_dummy;
 DIMSUMMARY g_d_summ_dummy;
-
-// end DIM
+// DIM reference to subtract
+DIMSTAT g_d_status_ref;
+//
+DIMSUMMARY g_d_summ_ADC_LED_ref, g_d_summ_ADC_PED_ref, g_d_summ_ADC_SIG_ref;
+DIMSUMMARY g_d_summ_DIG_LED_ref, g_d_summ_DIG_PED_ref, g_d_summ_DIG_SIG_ref;
+DIMSUMMARY g_d_summ_TDC_LED_ref, g_d_summ_TDC_SIG_ref;
+//
+DIMHIST g_d_ADC_LED_ref[NADCCHAN];
+DIMHIST g_d_ADC_PED_ref[NADCCHAN];
+DIMHIST g_d_ADC_SIG_ref[NADCCHAN];
+DIMHIST g_d_dwc1x_LED_ref, g_d_dwc1y_LED_ref, g_d_dwc2x_LED_ref, g_d_dwc2y_LED_ref; 
+DIMHIST g_d_dwc3x_LED_ref, g_d_dwc3y_LED_ref, g_d_dwc4x_LED_ref, g_d_dwc4y_LED_ref;
+DIMHIST g_d_dwc1x_SIG_ref, g_d_dwc1y_SIG_ref, g_d_dwc2x_SIG_ref, g_d_dwc2y_SIG_ref; 
+DIMHIST g_d_dwc3x_SIG_ref, g_d_dwc3y_SIG_ref, g_d_dwc4x_SIG_ref, g_d_dwc4y_SIG_ref;
+DIMHIST g_d_DIG_LEDPED_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_LEDMAX_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_PEDPED_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_PEDMAX_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_SIGPED_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_SIGMAX_ref[NDT5742CHAN];
+// end DIM stuff
 
 ClassImp(MyMainFrame)
 
@@ -248,6 +265,72 @@ void* address_dimhist(char* type, char* patt, char* cell, int chan, char* suppl)
   return ret;
 }
 
+void* address_ref_dimhist(char* type, char* patt, char* cell, int chan, char* suppl){
+  void* ret=0;
+  if(0==strcmp(cell,"summ"))return ret;  // return 0 if this is a dimsummary!
+  
+  if(0==strcmp(type,"ADC")){
+    if(0==strcmp(patt,"PED")){
+      if(chan>=0)ret=(void*)&g_d_ADC_PED_ref[chan];
+    }
+    else if(0==strcmp(patt,"LED")){
+      if(chan>=0)ret=(void*)&g_d_ADC_LED_ref[chan];
+    }
+    else if(0==strcmp(patt,"SIG")){
+      if(chan>=0)ret=(void*)&g_d_ADC_SIG_ref[chan];
+    }
+  }
+  else if(0==strcmp(type,"TDC")){
+    if(0==strcmp(patt,"LED")){
+      if(0==strcmp(cell,"dwc1x"))ret=(void*)&g_d_dwc1x_LED_ref;
+      if(0==strcmp(cell,"dwc2x"))ret=(void*)&g_d_dwc2x_LED_ref;
+      if(0==strcmp(cell,"dwc3x"))ret=(void*)&g_d_dwc3x_LED_ref;
+      if(0==strcmp(cell,"dwc4x"))ret=(void*)&g_d_dwc4x_LED_ref;
+      if(0==strcmp(cell,"dwc1y"))ret=(void*)&g_d_dwc1y_LED_ref;
+      if(0==strcmp(cell,"dwc2y"))ret=(void*)&g_d_dwc2y_LED_ref;
+      if(0==strcmp(cell,"dwc3y"))ret=(void*)&g_d_dwc3y_LED_ref;
+      if(0==strcmp(cell,"dwc4y"))ret=(void*)&g_d_dwc4y_LED_ref;
+    }
+    else if(0==strcmp(patt,"SIG")){
+      if(0==strcmp(cell,"dwc1x"))ret=(void*)&g_d_dwc1x_SIG_ref;
+      if(0==strcmp(cell,"dwc2x"))ret=(void*)&g_d_dwc2x_SIG_ref;
+      if(0==strcmp(cell,"dwc3x"))ret=(void*)&g_d_dwc3x_SIG_ref;
+      if(0==strcmp(cell,"dwc4x"))ret=(void*)&g_d_dwc4x_SIG_ref;
+      if(0==strcmp(cell,"dwc1y"))ret=(void*)&g_d_dwc1y_SIG_ref;
+      if(0==strcmp(cell,"dwc2y"))ret=(void*)&g_d_dwc2y_SIG_ref;
+      if(0==strcmp(cell,"dwc3y"))ret=(void*)&g_d_dwc3y_SIG_ref;
+      if(0==strcmp(cell,"dwc4y"))ret=(void*)&g_d_dwc4y_SIG_ref;
+    }
+  }
+  else if(0==strcmp(type,"DIG")){
+    if(0==strcmp(patt,"PED")){
+      if(0==strcmp(suppl,"PED")){
+        if(chan>=0)ret=(void*)&g_d_DIG_PEDPED_ref[chan];
+      }
+      else if(0==strcmp(suppl,"MAX")){
+        if(chan>=0)ret=(void*)&g_d_DIG_PEDMAX_ref[chan];
+      }
+    }
+    else if(0==strcmp(patt,"LED")){
+      if(0==strcmp(suppl,"PED")){
+        if(chan>=0)ret=(void*)&g_d_DIG_LEDPED_ref[chan];
+      }
+      else if(0==strcmp(suppl,"MAX")){
+        if(chan>=0)ret=(void*)&g_d_DIG_LEDMAX_ref[chan];
+      }
+    }
+    else if(0==strcmp(patt,"SIG")){
+      if(0==strcmp(suppl,"PED")){
+        if(chan>=0)ret=(void*)&g_d_DIG_SIGPED_ref[chan];
+      }
+      else if(0==strcmp(suppl,"MAX")){
+        if(chan>=0)ret=(void*)&g_d_DIG_SIGMAX_ref[chan];
+      }
+    }
+  }
+  return ret;
+}
+
 void* address_dimsummary(char* type, char* patt, char* cell, int chan, char* suppl){
   void* ret=0;
   if(0!=strcmp(cell,"summ"))return ret;  // return 0 if this is NOT a dimsummary
@@ -265,6 +348,27 @@ void* address_dimsummary(char* type, char* patt, char* cell, int chan, char* sup
     if     (0==strcmp(patt,"PED")) ret=(void*)&g_d_summ_DIG_PED;
     else if(0==strcmp(patt,"LED")) ret=(void*)&g_d_summ_DIG_LED;
     else if(0==strcmp(patt,"SIG")) ret=(void*)&g_d_summ_DIG_SIG;
+  }
+  return ret;
+}
+
+void* address_ref_dimsummary(char* type, char* patt, char* cell, int chan, char* suppl){
+  void* ret=0;
+  if(0!=strcmp(cell,"summ"))return ret;  // return 0 if this is NOT a dimsummary
+  
+  if(0==strcmp(type,"ADC")){
+    if     (0==strcmp(patt,"PED")) ret=(void*)&g_d_summ_ADC_PED_ref;
+    else if(0==strcmp(patt,"LED")) ret=(void*)&g_d_summ_ADC_LED_ref;
+    else if(0==strcmp(patt,"SIG")) ret=(void*)&g_d_summ_ADC_SIG_ref;
+  }
+  else if(0==strcmp(type,"TDC")){
+    if     (0==strcmp(patt,"LED")) ret=(void*)&g_d_summ_TDC_LED_ref;
+    else if(0==strcmp(patt,"SIG")) ret=(void*)&g_d_summ_TDC_SIG_ref;
+  }
+  else if(0==strcmp(type,"DIG")){
+    if     (0==strcmp(patt,"PED")) ret=(void*)&g_d_summ_DIG_PED_ref;
+    else if(0==strcmp(patt,"LED")) ret=(void*)&g_d_summ_DIG_LED_ref;
+    else if(0==strcmp(patt,"SIG")) ret=(void*)&g_d_summ_DIG_SIG_ref;
   }
   return ret;
 }
@@ -300,12 +404,57 @@ int sendcom(const char *cd){
   return dic_cmnd_service(srv,cm,sizeof(cm));
 }
 
+void MyMainFrame::Do2Ref(){
+  g_d_status_ref.Copy(g_d_status);
+  
+  if(g_d_summ_ADC_LED.isUsed())g_d_summ_ADC_LED_ref.Copy(g_d_summ_ADC_LED);
+  if(g_d_summ_ADC_PED.isUsed())g_d_summ_ADC_PED_ref.Copy(g_d_summ_ADC_PED);
+  if(g_d_summ_ADC_SIG.isUsed())g_d_summ_ADC_SIG_ref.Copy(g_d_summ_ADC_SIG);
+  if(g_d_summ_DIG_LED.isUsed())g_d_summ_DIG_LED_ref.Copy(g_d_summ_DIG_LED);
+  if(g_d_summ_DIG_PED.isUsed())g_d_summ_DIG_PED_ref.Copy(g_d_summ_DIG_PED); 
+  if(g_d_summ_DIG_SIG.isUsed())g_d_summ_DIG_SIG_ref.Copy(g_d_summ_DIG_SIG);
+  if(g_d_summ_TDC_LED.isUsed())g_d_summ_TDC_LED_ref.Copy(g_d_summ_TDC_LED);
+  if(g_d_summ_TDC_SIG.isUsed())g_d_summ_TDC_SIG_ref.Copy(g_d_summ_TDC_SIG);
+  //
+  for(int i=0; i<NADCCHAN; ++i){
+    if(g_d_ADC_LED[i].isUsed())g_d_ADC_LED_ref[i].Copy(g_d_ADC_LED[i]);
+    if(g_d_ADC_PED[i].isUsed())g_d_ADC_PED_ref[i].Copy(g_d_ADC_PED[i]);
+    if(g_d_ADC_SIG[i].isUsed())g_d_ADC_SIG_ref[i].Copy(g_d_ADC_SIG[i]);
+  }
+  //
+  if(g_d_dwc1x_LED.isUsed())g_d_dwc1x_LED_ref.Copy(g_d_dwc1x_LED);
+  if(g_d_dwc1y_LED.isUsed())g_d_dwc1y_LED_ref.Copy(g_d_dwc1y_LED);
+  if(g_d_dwc2x_LED.isUsed())g_d_dwc2x_LED_ref.Copy(g_d_dwc2x_LED);
+  if(g_d_dwc2y_LED.isUsed())g_d_dwc2y_LED_ref.Copy(g_d_dwc2y_LED);
+  if(g_d_dwc3x_LED.isUsed())g_d_dwc3x_LED_ref.Copy(g_d_dwc3x_LED);
+  if(g_d_dwc3y_LED.isUsed())g_d_dwc3y_LED_ref.Copy(g_d_dwc3y_LED);
+  if(g_d_dwc4x_LED.isUsed())g_d_dwc4x_LED_ref.Copy(g_d_dwc4x_LED);
+  if(g_d_dwc4y_LED.isUsed())g_d_dwc4y_LED_ref.Copy(g_d_dwc4y_LED);
+  if(g_d_dwc1x_SIG.isUsed())g_d_dwc1x_SIG_ref.Copy(g_d_dwc1x_SIG);
+  if(g_d_dwc1y_SIG.isUsed())g_d_dwc1y_SIG_ref.Copy(g_d_dwc1y_SIG);
+  if(g_d_dwc2x_SIG.isUsed())g_d_dwc2x_SIG_ref.Copy(g_d_dwc2x_SIG);
+  if(g_d_dwc2y_SIG.isUsed())g_d_dwc2y_SIG_ref.Copy(g_d_dwc2y_SIG);
+  if(g_d_dwc3x_SIG.isUsed())g_d_dwc3x_SIG_ref.Copy(g_d_dwc3x_SIG);
+  if(g_d_dwc3y_SIG.isUsed())g_d_dwc3y_SIG_ref.Copy(g_d_dwc3y_SIG);
+  if(g_d_dwc4x_SIG.isUsed())g_d_dwc4x_SIG_ref.Copy(g_d_dwc4x_SIG);
+  if(g_d_dwc4y_SIG.isUsed())g_d_dwc4y_SIG_ref.Copy(g_d_dwc4y_SIG);
+  //
+  for(int i=0; i<NDT5742CHAN; ++i){
+    if(g_d_DIG_LEDPED[i].isUsed())g_d_DIG_LEDPED_ref[i].Copy(g_d_DIG_LEDPED[i]);
+    if(g_d_DIG_LEDMAX[i].isUsed())g_d_DIG_LEDMAX_ref[i].Copy(g_d_DIG_LEDMAX[i]);
+    if(g_d_DIG_PEDPED[i].isUsed())g_d_DIG_PEDPED_ref[i].Copy(g_d_DIG_PEDPED[i]);
+    if(g_d_DIG_PEDMAX[i].isUsed())g_d_DIG_PEDMAX_ref[i].Copy(g_d_DIG_PEDMAX[i]);
+    if(g_d_DIG_SIGPED[i].isUsed())g_d_DIG_SIGPED_ref[i].Copy(g_d_DIG_SIGPED[i]);
+    if(g_d_DIG_SIGMAX[i].isUsed())g_d_DIG_SIGMAX_ref[i].Copy(g_d_DIG_SIGMAX[i]);
+  }
+}
+
 void MyMainFrame::DoAutoDraw(bool on){
   g_auto_draw=on;
 }
 
-void MyMainFrame::DoUpdateHists(){
-  g_update_hists=true;
+void MyMainFrame::DoSubRef(bool on){
+  g_subtract_ref=on;
 }
 
 void MyMainFrame::DoEnableStartRun(){
@@ -393,10 +542,15 @@ void MyMainFrame::drawHist()
   int nel=parse_service_name(g_name_selected, type, patt, cell, chan, suppl);
   if(0==strcmp(cell,"summ")){
     void* addr=address_dimsummary(type, patt, cell, chan, suppl);
-    if(addr){
+    void* addr_ref=address_ref_dimsummary(type, patt, cell, chan, suppl);
+    if(addr && addr_ref){
       DIMSUMMARY* dsaddr=(DIMSUMMARY*)addr;
+      DIMSUMMARY* dsaddr_ref=(DIMSUMMARY*)addr_ref;
+      DIMSUMMARY ds;
+      ds.Copy(*dsaddr);
+      if(g_subtract_ref)ds.Subtract(*dsaddr_ref);
       //dsaddr->fill_TProfile(p0);
-      dsaddr->fill_TH1D(h0);
+      ds.fill_TH1D(h0);
       if(0!=strcmp(g_name_selected,g_name_sel_prev)){
         gPad->SetRightMargin(0.17);
         gPad->SetLeftMargin(0.12);
@@ -412,9 +566,14 @@ void MyMainFrame::drawHist()
   }
   else{
     void* addr=address_dimhist(type, patt, cell, chan, suppl);
+    void* addr_ref=address_ref_dimhist(type, patt, cell, chan, suppl);
     if(addr){
       DIMHIST* dhaddr=(DIMHIST*)addr;
-      dhaddr->fill_TH1D(h0);
+      DIMHIST* dhaddr_ref=(DIMHIST*)addr_ref;
+      DIMHIST dh;
+      dh.Copy(*dhaddr);
+      if(g_subtract_ref)dh.Subtract(*dhaddr_ref);
+      dh.fill_TH1D(h0);
       if(0!=strcmp(g_name_selected,g_name_sel_prev)){
         gPad->SetRightMargin(0.17);
         gPad->SetLeftMargin(0.12);
@@ -432,7 +591,11 @@ void MyMainFrame::drawHist()
 void MyMainFrame::fillRunStatus(){
   char str[256];
   
-  DIMSTAT* d=&g_d_status;
+  DIMSTAT ds;
+  ds.Copy(g_d_status);
+  if(g_subtract_ref)ds.Subtract(g_d_status_ref);
+  
+  DIMSTAT* d=&ds;
   sprintf(str," RUN %12d",d->irun);
   lbNrun->SetText(str);
   
@@ -440,15 +603,15 @@ void MyMainFrame::fillRunStatus(){
   int nano=(int)((d->starttime-seconds)*1e9);
   TTimeStamp tst(seconds,nano);
   UInt_t year,month,day,hour,min,sec;
-  tst.GetDate(kTRUE,0,&year,&month,&day);
-  tst.GetTime(kTRUE,0,&hour,&min,&sec);
+  tst.GetDate(kFALSE,0,&year,&month,&day);
+  tst.GetTime(kFALSE,0,&hour,&min,&sec);
   sprintf(str," STARTED:      %2.2d:%2.2d:%2.2d",hour,min,sec);
   lbTbeg->SetText(str);
   
   int dur=d->runtime;
-  hour=dur/10000;
-  min=(dur/100)%100;
-  sec=dur%100;
+  hour=dur/3600;
+  min=(dur/60)%60;
+  sec=dur%60;
   sprintf(str," DURATION:     %2.2d:%2.2d:%2.2d",hour,min,sec);
   lbTdur->SetText(str);
   
@@ -842,14 +1005,14 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   cbHist->Resize(240,20);
   cbHist->Select(0,kFALSE);
   
-  tbDraw = new TGTextButton(hframk, "DRAW", 35);
-  tbDraw->Connect("Released()", "MyMainFrame", this, "DoDrawHist()");
-  hframk->AddFrame(tbDraw, new TGLayoutHints(kLHintsTop, 2, 2, 2, 2));
+  tb2Ref = new TGTextButton(hframk, "->Ref", 35);
+  tb2Ref->Connect("Released()", "MyMainFrame", this, "Do2Ref()");
+  hframk->AddFrame(tb2Ref, new TGLayoutHints(kLHintsLeft, 2, 2, 2, 2));
 
-  tbUpdate = new TGTextButton(hframk, "updateList",36);
-  tbUpdate->Connect("Released()", "MyMainFrame", this, "DoUpdateHists()");
-  hframk->AddFrame(tbUpdate, new TGLayoutHints(kLHintsRight, 2, 2, 2, 2));
-  
+  tbSubRef = new TGCheckButton(hframk, "-Ref",36);
+  tbSubRef->Connect("Toggled(Bool_t)", "MyMainFrame", this, "DoSubRef(Bool_t)");
+  hframk->AddFrame(tbSubRef, new TGLayoutHints(kLHintsLeft, 2, 2, 2, 2));
+
   tbAutoDraw = new TGCheckButton(hframk, "Auto",37);
   tbAutoDraw->Connect("Toggled(Bool_t)", "MyMainFrame", this, "DoAutoDraw(Bool_t)");
   hframk->AddFrame(tbAutoDraw, new TGLayoutHints(kLHintsRight, 100, 2, 2, 2));

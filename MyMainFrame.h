@@ -36,9 +36,8 @@ class MyMainFrame : public TGMainFrame {
   TGLabel *lbNrun, *lbTbeg, *lbTdur, *lbRunStatus, *lbNLED, *lbNPED, *lbNSIG, *lbNTOT, *lbConf;
   TGStatusBar          *fStatusBar;
   TGComboBox *cbPatt, *cbType, *cbHist;
-  TGTextButton *tbDraw;
-  TGTextButton *tbUpdate;
-  TGCheckButton *tbAutoDraw;
+  TGTextButton *tb2Ref;
+  TGCheckButton *tbAutoDraw, *tbSubRef;
   TGLabel *lbFile;
   
   TTimer            *fTimer;           // update timer
@@ -61,18 +60,22 @@ class MyMainFrame : public TGMainFrame {
   void DoDrawHist();
   void drawHist();
   
+  void Do2Ref();
+  
   void fillRunStatus();
   
   void              CloseWindow();
   
   void DoAutoDraw(bool on);
-  void DoUpdateHists();
+  void DoSubRef(bool on);
   
   ClassDef(MyMainFrame, 0)
 };
 
 int parse_service_name(const char* servicename, char* type, char* patt, char* cell, int& chan, char* suppl);
 void* address_dimhist(const char* type, const char* patt, const char* cell, int chan, const char* suppl);
+void* address_ref_dimhist_ref(const char* type, const char* patt, const char* cell, int chan, const char* suppl);
 void* address_dimsummary(const char* type, const char* patt, const char* cell, int chan, const char* suppl);
+void* address_ref_dimsummary(const char* type, const char* patt, const char* cell, int chan, const char* suppl);
 void reset_dimhists();
 int list_dimhists();
