@@ -149,6 +149,10 @@ int start_run(const char* task){
     }
   }
   
+  if(0==strcmp(g_config,"on") ||
+     0==strcmp(g_config,"off")
+     ) return 0;
+  
   if(0!=vme_init(6)){
     printf("cannot open VME, stop.\n");
     return 6;
@@ -305,6 +309,10 @@ int main(int argc, char *argv[]){
   printf("%s: config name is %s\n",__func__,g_config);
   int resstart=start_run(g_config);
   if(resstart!=0)return resstart;
+  
+  if(0==strcmp(g_config,"on") ||
+     0==strcmp(g_config,"off")
+     ) return 0;
   
   TTimeStamp tst0_tot, tst0_cmd, tst0_upd, tst0_print, tst0_write;
   double dt_tot=0, dt_cmd=0, dt_upd=0, dt_print=0, dt_write=0;
