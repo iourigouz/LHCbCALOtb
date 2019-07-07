@@ -63,6 +63,8 @@ class runParam {
   bool TDC_used;
   bool digitizer_used;
   
+  double cx1[3],cy1[3],cx2[3],cy2[3],cx3[3],cy3[3],cx4[3],cy4[3];
+  
  public:
   runParam();
   

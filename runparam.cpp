@@ -94,7 +94,15 @@ void runParam::reset(){
   ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
   VME_ADC1 = VME_ADC2 = VME_ADC3 = 0;
   digitizer_used=false;
-
+  
+  cx1[0]=-7046.; cx1[1]=140.; cx1[2]=7329.;
+  cy1[0]=-7119.; cy1[1]= 30.; cy1[2]=7157.;
+  cx2[0]=-7005.; cx2[1]=  7.; cx2[2]=7064.;
+  cy2[0]=-6929.; cy2[1]=170.; cy2[2]=7199.;
+  cx3[0]=-6936.; cx3[1]= 66.; cx3[2]=7032.;
+  cy3[0]=-6893.; cy3[1]= 86.; cy3[2]=6995.;
+  cx4[0]=-7000.; cx4[1]=  0.; cx4[2]=7000.;
+  cy4[0]=-7000.; cy4[1]=  0.; cy4[2]=7000.;
 }
   
 void runParam::setChanHV(char* nam, int ich, double v){
@@ -187,10 +195,10 @@ void runParam::write(const char* fnam){
   fprintf(f,"PEDPATT %d\n",PEDpatt);
   fprintf(f,"LEDPATT %d\n",LEDpatt);
   fprintf(f,"SIGPATT %d\n",SIGpatt);
-  fprintf(f,"PRINTPERIOD %d\n",printperiod);
-  fprintf(f,"WRITEPERIOD %d\n",writeperiod);
-  fprintf(f,"CMDPERIOD %d\n",cmdperiod);
-  fprintf(f,"UPDPERIOD %d\n",updperiod);
+  fprintf(f,"PRINTPERIOD %f\n",printperiod);
+  fprintf(f,"WRITEPERIOD %f\n",writeperiod);
+  fprintf(f,"CMDPERIOD %f\n",cmdperiod);
+  fprintf(f,"UPDPERIOD %f\n",updperiod);
   
   fprintf(f,"\n// LEDCHAN <iLED> <LED chan> <U_LED> \n");
   for(int i=0; i<sizeof(LEDchan)/sizeof(int); ++i){
@@ -320,6 +328,30 @@ void runParam::read(const char* fnam){
       }
       else if(0==strcmp(what,"UPDPERIOD")){
         if(nit>1 && nit1>0)updperiod=n;
+      }
+      else if(0==strcmp(what,"DWC1XPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC2XPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx2[0]=n; cx2[1]=v; cx2[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC3XPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx3[0]=n; cx3[1]=v; cx3[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC4XPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx4[0]=n; cx4[1]=v; cx4[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC1YPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cy1[0]=n; cy1[1]=v; cy1[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC2YPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cy2[0]=n; cy2[1]=v; cy2[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC3YPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cy3[0]=n; cy3[1]=v; cy3[2]=z;}
+      }
+      else if(0==strcmp(what,"DWC4YPAR")){
+        if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cy4[0]=n; cy4[1]=v; cy4[2]=z;}
       }
     }
   }

@@ -53,6 +53,8 @@ int g_nTDC[NTDCCHAN];
 int g_tTDC[NTDCCHAN][NTDCMAXHITS];
 int g_tTDCtrig;
 
+double g_x1, g_x2, g_x3, g_x4, g_y1, g_y2, g_y3, g_y4;
+
 int g_nDT5742[NDT5742CHAN];
 float* g_evdata742[NDT5742CHAN]; // intermediate destination for data pointers
 int g_used742[NDT5742CHAN];          // flag =1 for used channels, 0 otherwise
@@ -259,49 +261,49 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     }
     iTDC=0;
     if(g_dwc1left>=0 && g_dwc1right>=0){
-      g_hdwc1x_LED=new TH1I("dwc1x_LED_TDC","dwc1x LED",300,-15000,15000); 
+      g_hdwc1x_LED=new TH1I("dwc1x_LED_TDC","dwc1x LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc1x");
       iTDC++;
     }
     if(g_dwc1up>=0   && g_dwc1down>=0 ){
-      g_hdwc1y_LED=new TH1I("dwc1y_LED_TDC","dwc1y LED",300,-15000,15000); 
+      g_hdwc1y_LED=new TH1I("dwc1y_LED_TDC","dwc1y LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc1y");
       iTDC++;
     }
     if(g_dwc2left>=0 && g_dwc2right>=0){
-      g_hdwc2x_LED=new TH1I("dwc2x_LED_TDC","dwc2x LED",300,-15000,15000); 
+      g_hdwc2x_LED=new TH1I("dwc2x_LED_TDC","dwc2x LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc2x");
       iTDC++;
     }
     if(g_dwc2up>=0   && g_dwc2down>=0 ){
-      g_hdwc2y_LED=new TH1I("dwc2y_LED_TDC","dwc2y LED",300,-15000,15000); 
+      g_hdwc2y_LED=new TH1I("dwc2y_LED_TDC","dwc2y LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc2y");
       iTDC++;
     }
     if(g_dwc3left>=0 && g_dwc3right>=0){
-      g_hdwc3x_LED=new TH1I("dwc3x_LED_TDC","dwc3x LED",300,-15000,15000); 
+      g_hdwc3x_LED=new TH1I("dwc3x_LED_TDC","dwc3x LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc3x");
       iTDC++;
     }
     if(g_dwc3up>=0   && g_dwc3down>=0 ){
-      g_hdwc3y_LED=new TH1I("dwc3y_LED_TDC","dwc3y LED",300,-15000,15000); 
+      g_hdwc3y_LED=new TH1I("dwc3y_LED_TDC","dwc3y LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc3y");
       iTDC++;
     }
     if(g_dwc4left>=0 && g_dwc4right>=0){
-      g_hdwc4x_LED=new TH1I("dwc4x_LED_TDC","dwc4x LED",300,-15000,15000); 
+      g_hdwc4x_LED=new TH1I("dwc4x_LED_TDC","dwc4x LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc4x");
       iTDC++;
     }
     if(g_dwc4up>=0   && g_dwc4down>=0 ){
-      g_hdwc4y_LED=new TH1I("dwc4y_LED_TDC","dwc4y LED",300,-15000,15000); 
+      g_hdwc4y_LED=new TH1I("dwc4y_LED_TDC","dwc4y LED",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_LED->GetXaxis()->SetBinLabel(iTDC+1,"dwc1Y");
       iTDC++;
@@ -372,49 +374,49 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     }
     iTDC=0;
     if(g_dwc1left>=0 && g_dwc1right>=0){
-      g_hdwc1x_SIG=new TH1I("dwc1x_SIG_TDC","dwc1x SIG",300,-15000,15000); 
+      g_hdwc1x_SIG=new TH1I("dwc1x_SIG_TDC","dwc1x SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc1x");
       iTDC++;
     }
     if(g_dwc1up>=0   && g_dwc1down>=0 ){
-      g_hdwc1y_SIG=new TH1I("dwc1y_SIG_TDC","dwc1y SIG",300,-15000,15000); 
+      g_hdwc1y_SIG=new TH1I("dwc1y_SIG_TDC","dwc1y SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc1y");
       iTDC++;
     }
     if(g_dwc2left>=0 && g_dwc2right>=0){
-      g_hdwc2x_SIG=new TH1I("dwc2x_SIG_TDC","dwc2x SIG",300,-15000,15000); 
+      g_hdwc2x_SIG=new TH1I("dwc2x_SIG_TDC","dwc2x SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc2x");
       iTDC++;
     }
     if(g_dwc2up>=0   && g_dwc2down>=0 ){
-      g_hdwc2y_SIG=new TH1I("dwc2y_SIG_TDC","dwc2y SIG",300,-15000,15000); 
+      g_hdwc2y_SIG=new TH1I("dwc2y_SIG_TDC","dwc2y SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc2y");
       iTDC++;
     }
     if(g_dwc3left>=0 && g_dwc3right>=0){
-      g_hdwc3x_SIG=new TH1I("dwc3x_SIG_TDC","dwc3x SIG",300,-15000,15000); 
+      g_hdwc3x_SIG=new TH1I("dwc3x_SIG_TDC","dwc3x SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc3x");
       iTDC++;
     }
     if(g_dwc3up>=0   && g_dwc3down>=0 ){
-      g_hdwc3y_SIG=new TH1I("dwc3y_SIG_TDC","dwc3y SIG",300,-15000,15000); 
+      g_hdwc3y_SIG=new TH1I("dwc3y_SIG_TDC","dwc3y SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc3y");
       iTDC++;
     }
     if(g_dwc4left>=0 && g_dwc4right>=0){
-      g_hdwc4x_SIG=new TH1I("dwc4x_SIG_TDC","dwc4x SIG",300,-15000,15000); 
+      g_hdwc4x_SIG=new TH1I("dwc4x_SIG_TDC","dwc4x SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc4x");
       iTDC++;
     }
     if(g_dwc4up>=0   && g_dwc4down>=0 ){
-      g_hdwc4y_SIG=new TH1I("dwc4y_SIG_TDC","dwc4y SIG",300,-15000,15000); 
+      g_hdwc4y_SIG=new TH1I("dwc4y_SIG_TDC","dwc4y SIG",300,-75,75); 
       nh1i++;
       g_hsumm_TDC_SIG->GetXaxis()->SetBinLabel(iTDC+1,"dwc1Y");
       iTDC++;
@@ -469,6 +471,14 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         g_ROOTtree->Branch(nam1,&g_aDT5742[JCH][0],fmt);
       }
     }
+    if(g_dwc1left>=0 && g_dwc1right>=0)  g_ROOTtree->Branch("x1",&g_x1,"x1/D");
+    if(g_dwc1up>=0 && g_dwc1down>=0)     g_ROOTtree->Branch("y1",&g_y1,"y1/D");
+    if(g_dwc2left>=0 && g_dwc2right>=0)  g_ROOTtree->Branch("x2",&g_x2,"x2/D");
+    if(g_dwc2up>=0 && g_dwc2down>=0)     g_ROOTtree->Branch("y2",&g_y2,"y2/D");
+    if(g_dwc3left>=0 && g_dwc3right>=0)  g_ROOTtree->Branch("x3",&g_x3,"x3/D");
+    if(g_dwc3up>=0 && g_dwc3down>=0)     g_ROOTtree->Branch("y3",&g_y3,"y3/D");
+    if(g_dwc4left>=0 && g_dwc4right>=0)  g_ROOTtree->Branch("x4",&g_x4,"x4/D");
+    if(g_dwc4up>=0 && g_dwc4down>=0)     g_ROOTtree->Branch("y4",&g_y4,"y4/D");
   }
 }
 
@@ -669,6 +679,8 @@ void fill_all(){
       }
     }
     
+    g_x1=g_x2=g_x3=g_x4=g_y1=g_y2=g_y3=g_y4=-9999.;
+    
     if(g_dwc1left>=0 && g_dwc1right>=0){
       int c1=g_rp.datachan[g_dwc1left];
       int c2=g_rp.datachan[g_dwc1right];
@@ -676,13 +688,14 @@ void fill_all(){
       TH1I* hSIG=g_hdwc1x_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc1x");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_x1=72./(g_rp.cx1[2]-g_rp.cx1[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cx1[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_x1);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_x1);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_x1);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_x1);
         }
       }
     }
@@ -693,13 +706,14 @@ void fill_all(){
       TH1I* hSIG=g_hdwc2x_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc2x");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_x2= - 72./(g_rp.cx2[2]-g_rp.cx2[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cx2[1]); // NB inversion!
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_x2);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_x2);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_x2);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_x2);
         }
       }
     }
@@ -710,13 +724,14 @@ void fill_all(){
       TH1I* hSIG=g_hdwc3x_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc3x");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_x3=72./(g_rp.cx3[2]-g_rp.cx3[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cx3[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_x3);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_x3);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_x3);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_x3);
         }
       }
     }
@@ -727,82 +742,87 @@ void fill_all(){
       TH1I* hSIG=g_hdwc4x_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc4x");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_x4=72./(g_rp.cx4[2]-g_rp.cx4[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cx4[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_x4);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_x4);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_x4);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_x4);
         }
       }
     }
     
     if(g_dwc1up>=0 && g_dwc1down>=0){
-      int c1=g_rp.datachan[g_dwc1up];
-      int c2=g_rp.datachan[g_dwc1down];
+      int c1=g_rp.datachan[g_dwc1down];
+      int c2=g_rp.datachan[g_dwc1up];
       TH1I* hLED=g_hdwc1y_LED;
       TH1I* hSIG=g_hdwc1y_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc1y");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_y1=72./(g_rp.cy1[2]-g_rp.cy1[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cy1[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_y1);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_y1);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_y1);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_y1);
         }
       }
     }
     if(g_dwc2up>=0 && g_dwc2down>=0){
-      int c1=g_rp.datachan[g_dwc2up];
-      int c2=g_rp.datachan[g_dwc2down];
+      int c1=g_rp.datachan[g_dwc2down];
+      int c2=g_rp.datachan[g_dwc2up];
       TH1I* hLED=g_hdwc2y_LED;
       TH1I* hSIG=g_hdwc2y_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc2y");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_y2=72./(g_rp.cy2[2]-g_rp.cy2[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cy2[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_y2);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_y2);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_y2);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_y2);
         }
       }
     }
     if(g_dwc3up>=0 && g_dwc3down>=0){
-      int c1=g_rp.datachan[g_dwc3up];
-      int c2=g_rp.datachan[g_dwc3down];
+      int c1=g_rp.datachan[g_dwc3down];
+      int c2=g_rp.datachan[g_dwc3up];
       TH1I* hLED=g_hdwc3y_LED;
       TH1I* hSIG=g_hdwc3y_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc3y");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_y3=72./(g_rp.cy3[2]-g_rp.cy3[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cy3[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_y3);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_y3);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_y3);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_y3);
         }
       }
     }
     if(g_dwc4up>=0 && g_dwc4down>=0){
-      int c1=g_rp.datachan[g_dwc4up];
-      int c2=g_rp.datachan[g_dwc4down];
+      int c1=g_rp.datachan[g_dwc4down];
+      int c2=g_rp.datachan[g_dwc4up];
       TH1I* hLED=g_hdwc4y_LED;
       TH1I* hSIG=g_hdwc4y_SIG;
       int ibin=findbin(g_hsumm_TDC_SIG, "dwc4y");
       if(g_nTDC[c1]>0 && g_nTDC[c2]>0){
+        g_y4=72./(g_rp.cy4[2]-g_rp.cy4[0])*(g_tTDC[c1][0]-g_tTDC[c2][0]-g_rp.cy4[1]);
         if(g_rp.LEDpatt==g_pattern && 0!=hLED){
-          hLED->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_LED->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hLED->Fill(g_y4);
+          g_hsumm_TDC_LED->Fill(ibin-0.5,g_y4);
         }
         else if(g_rp.SIGpatt==g_pattern && 0!=hSIG){
-          hSIG->Fill(g_tTDC[c1][0]-g_tTDC[c2][0]);
-          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_tTDC[c1][0]-g_tTDC[c2][0]);
+          hSIG->Fill(g_y4);
+          g_hsumm_TDC_SIG->Fill(ibin-0.5,g_y4);
         }
       }
     }
