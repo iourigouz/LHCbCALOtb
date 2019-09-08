@@ -42,6 +42,7 @@ class runParam {
   int HVmaster, HVslave;
   
   int PEDpatt, LEDpatt, SIGpatt;
+  double PEDperiod, LEDperiod; // in seconds!!!
 
   int nLEDs;
   int LEDchan[MAXLEDS];

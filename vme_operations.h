@@ -4,6 +4,15 @@
 
 extern bool g_vme_initialized;
 
+extern uint32_t VME_WAIT_OK; //=0x80;
+extern uint32_t VME_WAIT_SIG; //=0x84;
+extern uint32_t VME_WAIT_LED; //=0x82;
+extern uint32_t VME_WAIT_PED; //=0x81;
+extern uint32_t VME_WAIT_TIMEOUT; //=0x6F;
+extern uint32_t VME_WAIT_BADVECT; //=0x70;
+extern uint32_t VME_WAIT_BADIRQ; //=0x71;
+extern uint32_t VME_WAIT_BADACK; //=0x72;
+
 int vme_init(int pulse_len=6); // + configure pulsers for LED (Pulser A) and PED (Pulser B)
 
 int vme_pulse(int pattern); // 0 if PED, 1 if LED, no pulse otherwise
@@ -12,7 +21,11 @@ int vme_pulsePED();
 
 int vme_wait0(uint32_t timeout);
 int vme_wait(uint32_t timeout);
-int vme_clearCORBO();
+int vme_getirq(int& level, int& vector);
+int vme_clearCORBO(); // clear BUSY VME_CRB_CH
+int vme_setCORBO();   // set BUSY VME_CRB_CH
+int vme_clearCORBO_2(); // clear BUSY VME_CRB_CH2
+int vme_setCORBO_2();   // set BUSY VME_CRB_CH2
 
 int vme_read_pattern();
 int vme_readADC();

@@ -153,7 +153,7 @@ int start_run(const char* task){
      0==strcmp(g_config,"off")
      ) return 0;
   
-  if(0!=vme_init(6)){
+  if(0!=vme_init(6)){ // pulser length = 6*25 ns
     printf("cannot open VME, stop.\n");
     return 6;
   }
@@ -317,6 +317,7 @@ int main(int argc, char *argv[]){
   TTimeStamp tst0_tot, tst0_cmd, tst0_upd, tst0_print, tst0_write;
   double dt_tot=0, dt_cmd=0, dt_upd=0, dt_print=0, dt_write=0;
   
+  int retwait=0;
   while(true){
     if(g_exit){
       int res=exit_server();
@@ -340,30 +341,78 @@ int main(int argc, char *argv[]){
     TTimeStamp tst_write;  dt_write=tst_write.AsDouble() - tst0_write.AsDouble();
     
     if(g_running){
-      int ret=vme_wait((uint32_t)100); // timeout 100 msec
-      if(0==ret){
-        if(0!=vme_read_pattern()) printf("%s ev%6d: WARNING error vme_read_pattern\n",__func__,g_ievt);
-        if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC\n",__func__,g_ievt);
-        if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
+      retwait=vme_wait((uint32_t)100); // timeout 100 msec
+      if( (retwait & VME_WAIT_OK) ){
+        if( VME_WAIT_SIG == (retwait & VME_WAIT_SIG) ){
+          g_pattern=g_rp.SIGpatt;
+          
+          if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC, SIG\n",__func__,g_ievt);
+          if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
+          if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
+          if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          
+          fill_all();
+          g_ievt++; g_nsig++;
       
-        if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
-        if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          if( (1==g_ievt) || (0==g_ievt%1000) )
+            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
+                   g_t, g_ievt, g_nped, g_nled, g_nsig);
+        }
+        if( VME_WAIT_LED == (retwait & VME_WAIT_LED) ){
+          g_pattern=g_rp.LEDpatt;
+          
+          if(0!=vme_pulseLED())     printf("%s ev%6d: WARNING error vme_pulseLED\n",__func__,g_ievt);
+          
+          if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC, LED\n",__func__,g_ievt);
+          if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
+          if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
+          if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          
+          fill_all();
+          g_ievt++; g_nled++;
       
-        if(0!=vme_clearCORBO())   printf("%s ev%6d: WARNING error vme_clearCORBO\n",__func__,g_ievt);
+          if( (1==g_ievt) || (0==g_ievt%1000) )
+            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
+                   g_t, g_ievt, g_nped, g_nled, g_nsig);
+        }
+        if( VME_WAIT_PED == (retwait & VME_WAIT_PED) ){
+          g_pattern=g_rp.PEDpatt;
+          
+          if(0!=vme_pulsePED())     printf("%s ev%6d: WARNING error vme_pulsePED\n",__func__,g_ievt);
+          
+          if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC, PED\n",__func__,g_ievt);
+          if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
+          if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
+          if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          
+          fill_all();
+          g_ievt++; g_nped++;
       
-        fill_all();
-      
-        g_ievt++;
-        if(g_rp.PEDpatt==g_pattern)g_nped++;
-        else if(g_rp.LEDpatt==g_pattern)g_nled++;
-        else if(g_rp.SIGpatt==g_pattern)g_nsig++;
-      
-        if( (1==g_ievt) || (0==g_ievt%1000) )
-          printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
-                 g_t, g_ievt, g_nped, g_nled, g_nsig);
-      
+          if( (1==g_ievt) || (0==g_ievt%1000) )
+            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
+                   g_t, g_ievt, g_nped, g_nled, g_nsig);
+        }
+        
+        if( VME_WAIT_SIG == (retwait & VME_WAIT_SIG) ){
+          if(0!=vme_clearCORBO())   printf("%s ev%6d: WARNING error vme_clearCORBO\n",__func__,g_ievt);
+        }
+        else if( (VME_WAIT_LED == (retwait & VME_WAIT_LED)) || (VME_WAIT_PED == (retwait & VME_WAIT_PED)) ){
+          //int irqvec=0, irqlev=0;
+          //vme_getirq(irqlev,irqvec);
+          //if(0!=irqlev)printf("%s ev%6d irqlev %d, irqvec 0X%X, evkind %d\n",__func__,g_ievt,irqlev,irqvec,retwait%8);
+          if(0!=vme_clearCORBO_2())   printf("%s ev%6d: WARNING error vme_clearCORBO_2\n",__func__,g_ievt);
+        }
       }
-      else if(ret>100){// timeout, probably out of spill - check what useful can I do
+      else if(VME_WAIT_TIMEOUT==retwait){// timeout, probably out of spill - check what useful can I do
+      } 
+      else if(VME_WAIT_BADVECT==retwait){// bad interrupt vector
+        printf("%s ev%6d: wrong interrupt vector\n",__func__,g_ievt);
+      } 
+      else if(VME_WAIT_BADIRQ==retwait){// error in IRQ check
+        printf("%s ev%6d: error in IRQ check\n",__func__,g_ievt);
+      } 
+      else if(VME_WAIT_BADACK==retwait){// error in IRQ acknowledge
+        printf("%s ev%6d: error in IRQ acknowledge\n",__func__,g_ievt);
       } 
       else {
         printf("%s ev%6d: ERROR vme_wait()\n",__func__,g_ievt);

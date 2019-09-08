@@ -23,6 +23,15 @@
 #include "ntp.h"
 #include "vme_operations.h"
 
+uint32_t VME_WAIT_OK=0x80;
+uint32_t VME_WAIT_SIG=VME_WAIT_OK | 0x4;
+uint32_t VME_WAIT_LED=VME_WAIT_OK | 0x2;
+uint32_t VME_WAIT_PED=VME_WAIT_OK | 0x1;
+uint32_t VME_WAIT_TIMEOUT=0x6F;
+uint32_t VME_WAIT_BADVECT=0x70;
+uint32_t VME_WAIT_BADIRQ=0x71;
+uint32_t VME_WAIT_BADACK=0x72;
+
 bool g_ADC1_installed=true;
 bool g_ADC2_installed=true;
 bool g_ADC3_installed=true;
@@ -31,6 +40,10 @@ bool g_TDC_installed=true;
 bool g_vme_initialized=false;
 
 int32_t       BHandle;
+
+struct timeval last_SIG_time;
+struct timeval last_LED_time;
+struct timeval last_PED_time;
 
 //----------------------V260 functions ---------------------
 int V260_init(const uint32_t base){
@@ -611,7 +624,7 @@ int CORBO_init(int base){
   }
   
   if(VME_CRB_CH2!=VME_CRB_CH){// the channel for pulse generation
-    if(cvSuccess!=(ret=CORBO_write_CSR(base, VME_CRB_CH2, 0xEC)) ){ // enable main channel, test input
+    if(cvSuccess!=(ret=CORBO_write_CSR(base, VME_CRB_CH2, 0xEC)) ){ // enable second channel, test input
       printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,VME_CRB_CH2);
       return -101;
     }
@@ -918,8 +931,8 @@ int vme_init(int pulse_len){
   res=CAENVME_SetPulserConf(BHandle, cvPulserB, 20, pulse_len, cvUnit25ns, 1, cvManualSW, cvManualSW);
   if(cvSuccess!=res){printf("%s: Error in CAENVME_SetPulserConf\n", __func__);return res;}
   
-  res=V259_clear(VME_V259);
-  if(cvSuccess!=res){printf("%s: Error clear V259\n", __func__);return res;}
+  //res=V259_clear(VME_V259);
+  //if(cvSuccess!=res){printf("%s: Error clear V259\n", __func__);return res;}
   
   if(g_ADC1_installed && g_rp.ADC1_used){
     res=ADC_clear(VME_ADC1);
@@ -956,6 +969,10 @@ int vme_init(int pulse_len){
   res=CORBO_init(VME_CORBO);
   if(cvSuccess!=res){printf("%s: Error init CORBO\n", __func__);return res;}
   
+  gettimeofday(&last_LED_time,NULL); // initialize last PED, LED, SIG time
+  gettimeofday(&last_PED_time,NULL);
+  gettimeofday(&last_SIG_time,NULL);
+
   return 0;
 }
 
@@ -1136,10 +1153,10 @@ int vme_start(){
     }
   }
   
-  if( cvSuccess!=(c_res=V259_clear(VME_V259)) ){
-    printf("%s: clear V259 returns %d\n",__func__,c_res);
-    return c_res;
-  }
+  //if( cvSuccess!=(c_res=V259_clear(VME_V259)) ){
+  //  printf("%s: clear V259 returns %d\n",__func__,c_res);
+  //  return c_res;
+  //}
   
   if( cvSuccess!=(c_res=V1290_clear(VME_V1290)) ){
     printf("%s: clear TDC returns %d\n",__func__,c_res);
@@ -1157,7 +1174,7 @@ int vme_start(){
   
   //CVIRQLevels mask_enable=cvirq(VME_CRB_IRQ);
   //if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, cvirq(VME_CRB_IRQ)))){; // level 3
-  if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, 0xFFFFFFFF))){; // level 3
+  if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, 0xFFFFFFFF))){; // all levels
     printf("%s: Cannot enable VME IRQ\n",__func__);
     return c_res;
   }
@@ -1175,7 +1192,12 @@ int vme_start(){
   else printf("%s: CORBO IRQ written/read back: cr 0x%X / 0x%X; vr 0x%X / 0x%X\n",
               __func__, VME_CRB_IRQ, cr, VME_CRB_VEC, vr);
   
-  if( cvSuccess!=(c_res=CORBO_clear(VME_CORBO,VME_CRB_CH)) ){
+  if( cvSuccess!=(c_res=CORBO_clear(VME_CORBO,VME_CRB_CH)) ){// clear CORBO main channel
+    printf("%s: CORBO clear ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+    return c_res;
+  }
+  
+  if( cvSuccess!=(c_res=CORBO_clear(VME_CORBO,VME_CRB_CH2)) ){// clear CORBO secondary channel
     printf("%s: CORBO clear ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
     return c_res;
   }
@@ -1234,57 +1256,87 @@ int vme_wait(uint32_t timeout){
   struct timeval check_time;
   gettimeofday(&start_time, NULL);
   
+  int sigledpedcode=0;
   while(true){
+    gettimeofday(&check_time, NULL);
+    
+    int dtped=diftimeval(last_PED_time, check_time);
+    if(g_rp.PEDperiod>0.001){
+      if(dtped>(int)1000000.*g_rp.PEDperiod){
+        if(0==sigledpedcode){
+          if(0!=vme_setCORBO_2()) printf("%s ev%6d: WARNING error vme_setCORBO_2\n",__func__,g_ievt);
+        }
+        sigledpedcode|=VME_WAIT_PED;
+        gettimeofday(&last_PED_time,NULL);
+      }
+    }
+    
+    int dtled=diftimeval(last_LED_time, check_time);
+    if(g_rp.LEDperiod>0.001){
+      if(dtled>(int)1000000.*g_rp.LEDperiod){
+        if(0==sigledpedcode){
+          if(0!=vme_setCORBO_2()) printf("%s ev%6d: WARNING error vme_setCORBO_2\n",__func__,g_ievt);
+        }
+        sigledpedcode|=VME_WAIT_LED;
+        gettimeofday(&last_LED_time,NULL);
+      }
+    }
+    
     if(cvSuccess!=(ret=CAENVME_IRQCheck(BHandle, &msk1))){
-      printf("%s: Cannot check IRQ\n",__func__);
-      return ret;
+      printf("%s: Cannot check IRQ, returns %d\n",__func__,ret);
+      return VME_WAIT_BADIRQ;
     }
     if(msk1 & cvirq(VME_CRB_IRQ)){
-      ret=0; 
-      break;
+      sigledpedcode|=VME_WAIT_SIG; 
+      gettimeofday(&last_SIG_time,NULL);
     }
-    gettimeofday(&check_time, NULL);
+    
+    if(sigledpedcode)break;
+    
     int dt=diftimeval(start_time, check_time);
     if(dt>timeout*1000){
-      return 111;
+      return VME_WAIT_TIMEOUT;// timeout
     }
   }
-
-  //while( !(msk1 & cvirq(VME_CRB_IRQ)) ){
-  //  if(cvSuccess!=(ret=CAENVME_IRQCheck(BHandle, &msk1))){
-  //    printf("%s: Cannot check IRQ\n",__func__);
-  //    return ret;
-  //  }
-  //}
-  //ret=CAENVME_IRQWait(BHandle, cvirq(VME_CRB_IRQ), timeout);
-  //ret=CAENVME_IRQWait(BHandle, 0xFFFFFFFF, timeout);
-  //
-  //if(cvSuccess!=ret){
-  //  if (cvTimeoutError!=ret){
-  //    printf("%s: %d returned\n",__func__,ret);
-  //    return ret;
-  //  }
-  //  else return 111;
-  //}
-  //
-  // then check irq AFTER WAIT
-  //if(cvSuccess!=(ret=CAENVME_IRQCheck(BHandle, &msk2))){
-  //  printf("%s: Cannot check IRQ\n",__func__);
-  //  return ret;
-  //}
-  //
-  //printf("%s: active interrupt before CAENVME_IRQWait: 0x%X; after: 0x%X\n",__func__,msk1,msk2);
   
   uint32_t vec=0;
-  if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(VME_CRB_IRQ), &vec, cvD32))){; // level 3
-    printf("%s Cannot acknowledge IRQ\n",__func__);
-    return ret;
+  if( VME_WAIT_SIG == ( VME_WAIT_SIG & sigledpedcode ) ){
+    if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(VME_CRB_IRQ), &vec, cvD32))){; // level 3
+      printf("%s Cannot acknowledge IRQ, returns %d\n",__func__,ret);
+      return VME_WAIT_BADACK;
+    }
+    else if(VME_CRB_VEC!=(vec&0xFF)){
+      printf("%s WARNING wrong interrupt vector %d\n",__func__,vec);
+      return VME_WAIT_BADVECT;
+    }
   }
-  else if(VME_CRB_VEC!=(vec&0xFF)){
-    printf("%s WARNING wrong interrupt vector %d\n",__func__,vec);
-    return 112;
+  
+  if(0==sigledpedcode)printf("%s INFO: returning 0\n",__func__);
+  return sigledpedcode;
+}
+
+int vme_getirq(int& level, int& vector){// 
+  int ret=0;
+  unsigned char msk1=0, msk2=0;
+  uint32_t vec=0;
+  
+  level=vector=0;
+  
+  if(cvSuccess!=(ret=CAENVME_IRQCheck(BHandle, &msk1))){
+    printf("%s: Cannot check IRQ, returns %d\n",__func__,ret);
+    return VME_WAIT_BADIRQ;
   }
-  return 0;
+  
+  if(msk1){
+    if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(VME_CRB_IRQ), &vec, cvD32))){; // level 3
+      printf("%s Cannot acknowledge IRQ, returns %d\n",__func__,ret);
+      return VME_WAIT_BADACK;
+    }
+  }
+  
+  level=msk1;
+  vector=vec;
+  return cvSuccess;
 }
 
 int vme_wait0(uint32_t timeout){
@@ -1306,4 +1358,16 @@ int vme_wait0(uint32_t timeout){
 
 int vme_clearCORBO(){
     CORBO_clear(VME_CORBO,VME_CRB_CH);
+}
+
+int vme_setCORBO(){
+    CORBO_setbusy(VME_CORBO,VME_CRB_CH);
+}
+
+int vme_clearCORBO_2(){
+    CORBO_clear(VME_CORBO,VME_CRB_CH2);
+}
+
+int vme_setCORBO_2(){
+    CORBO_setbusy(VME_CORBO,VME_CRB_CH2);
 }

@@ -72,6 +72,8 @@ void runParam::reset(){
   
   printperiod=writeperiod=cmdperiod=updperiod=1; // in seconds!!!
   
+  PEDperiod=LEDperiod=-1; // in seconds!!! negative==do not generate
+  
   HVmaster=HVslave=0; // both illegal, HVmaster should be 1...4, HVslave 1...31
   
   PEDpatt=1;
@@ -177,7 +179,7 @@ void runParam::setLED(int iLED, int ich, double v){
   LEDchan[iLED]=ich;
   ULED[iLED]=v;
 }
-  
+
 void runParam::write(const char* fnam){
   FILE* f=fopen(fnam,"w");
   if(!f)return;
@@ -195,6 +197,10 @@ void runParam::write(const char* fnam){
   fprintf(f,"PEDPATT %d\n",PEDpatt);
   fprintf(f,"LEDPATT %d\n",LEDpatt);
   fprintf(f,"SIGPATT %d\n",SIGpatt);
+  
+  fprintf(f,"PEDPERIOD %f\n",PEDperiod);
+  fprintf(f,"LEDPERIOD %f\n",LEDperiod);
+  
   fprintf(f,"PRINTPERIOD %f\n",printperiod);
   fprintf(f,"WRITEPERIOD %f\n",writeperiod);
   fprintf(f,"CMDPERIOD %f\n",cmdperiod);
@@ -328,6 +334,12 @@ void runParam::read(const char* fnam){
       }
       else if(0==strcmp(what,"UPDPERIOD")){
         if(nit>1 && nit1>0)updperiod=n;
+      }
+      else if(0==strcmp(what,"LEDPERIOD")){
+        if(nit>1 && nit1>0)LEDperiod=n;
+      }
+      else if(0==strcmp(what,"PEDPERIOD")){
+        if(nit>1 && nit1>0)PEDperiod=n;
       }
       else if(0==strcmp(what,"DWC1XPAR")){
         if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}
