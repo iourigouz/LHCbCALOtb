@@ -39,7 +39,6 @@ class runParam {
  public:
   bool init;
   double printperiod, writeperiod, cmdperiod, updperiod;
-  int HVmaster, HVslave;
   
   int PEDpatt, LEDpatt, SIGpatt;
   double PEDperiod, LEDperiod; // in seconds!!!
@@ -59,7 +58,6 @@ class runParam {
   int datatype[MAXCHANS];  // 1=ADC; 2=TDC; 3=DIG
   int datachan[MAXCHANS];
   
-  bool SPECS_used;
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;
   bool digitizer_used;

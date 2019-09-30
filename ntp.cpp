@@ -45,7 +45,7 @@ TTree* g_ROOTtree=(TTree*)0;
 int g_nTDCclear=0;
 
 double g_t_tot, g_t0_tot;
-double g_t, g_t0;
+double g_t, g_t0, g_tprev;
 int g_pattern; // 1=PED, 2=LED, 4=SIG
 int g_ADC[NADCCHAN];
 
@@ -139,7 +139,7 @@ DimCommand* g_cmnd;
 //
 // end online histos
 // DIM stuff
-char g_dimdns[128]="pclbhcpmt01";
+char g_dimdns[128]="pclbcscalib01";
 char g_servernam[128]="TB_DAQ";
 char g_cmdNam[128]="TB_DAQ_CMD";
 char g_statusNam[128]="TB_DAQ_STATUS";
@@ -175,6 +175,8 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     g_t0=ttst.GetSec();
     g_ht0=new TH1D("t0","t0",3,-1.5,1.5);
     g_ht0->Fill(0.0,g_t0);
+    
+    g_tprev=g_t0;
     
     g_hPMTHV=new TH1D("PMTHV","PMTHV",216,0,216);
     for(int i=0; i<g_rp.nchans; ++i){
@@ -619,6 +621,7 @@ int findbin(TH1* h, const char* t){ // returns bin number, 1...N+1, as in the TA
 void fill_all(){
   if(g_ROOTfile && g_ROOTtree){
     TTimeStamp ttst;
+    g_tprev=g_t;  // save the previous event time
     g_t=ttst.AsDouble()-g_t0;
     
     g_hpattern->Fill(g_pattern);

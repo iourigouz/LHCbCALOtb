@@ -74,8 +74,6 @@ void runParam::reset(){
   
   PEDperiod=LEDperiod=-1; // in seconds!!! negative==do not generate
   
-  HVmaster=HVslave=0; // both illegal, HVmaster should be 1...4, HVslave 1...31
-  
   PEDpatt=1;
   LEDpatt=2;
   SIGpatt=4;
@@ -92,7 +90,6 @@ void runParam::reset(){
   memset(datatype,0,sizeof(datatype));
   memset(datachan,0,sizeof(datachan));
   
-  SPECS_used=false;
   ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
   VME_ADC1 = VME_ADC2 = VME_ADC3 = 0;
   digitizer_used=false;
@@ -184,10 +181,6 @@ void runParam::write(const char* fnam){
   FILE* f=fopen(fnam,"w");
   if(!f)return;
   
-  fprintf(f,"//SPECS part\n");
-  fprintf(f,"HVMASTER %d\n",HVmaster);
-  fprintf(f,"HVSLAVE %d\n\n",HVslave);
-  
   fprintf(f,"\n// HVCHAN <name> <HV chan #> <HV value in kV>\n");
   for(int i=0; i<nchans; ++i){
     if(HVchan[i]>=0)fprintf(f,"HVCHAN %s %d %6.4f\n",&chnam[i][0],HVchan[i],HV[i]);
@@ -256,13 +249,7 @@ void runParam::read(const char* fnam){
       int nit2=0; if(nit>2) nit2=sscanf(cv,"%lf",&v);
       int nit3=0; if(nit>3) nit3=sscanf(cz,"%lf",&z);
         
-      if(0==strcmp(what,"HVMASTER")){
-        if(1==nit1) HVmaster=(int)limited(n,1,4);
-      }
-      else if(0==strcmp(what,"HVSLAVE")){
-        if(1==nit1) HVslave=(int)limited(n,1,31);
-      }
-      else if(0==strcmp(what,"HVCHAN")){
+      if(0==strcmp(what,"HVCHAN")){
         if(nit>3 && nit2>0 &&nit3>0)setChanHV(cn,(int)limited(v,0,199),limited(z,0,2));
       }
       else if(0==strcmp(what,"PEDPATT")){
@@ -390,11 +377,7 @@ void runParam::read(const char* fnam){
   //printf("nchans=%d\n",nchans);
   
   // now inventory: what is used
-  for(int i=0; i<sizeof(LEDchan)/sizeof(int); ++i){  // 1) SPECS
-    if(LEDchan[i]>=0)SPECS_used=true;
-  }
   for(int ich=0; ich<nchans; ++ich){  // 2) ADC
-    if(HVchan[ich]>=0)SPECS_used=true;
     if(1==datatype[ich]){// 2) ADC
       if(datachan[ich]>=0 && datachan[ich]<8)ADC1_used=true;
       else if(datachan[ich]>=8 && datachan[ich]<16)ADC2_used=true;

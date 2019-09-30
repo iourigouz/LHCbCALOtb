@@ -1044,9 +1044,10 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
 void MyMainFrame::Init(){
   gStyle->SetOptStat(1112210);
   
-  int res=dim_set_dns_node("pclbhcpmt01");
+  //int res=dim_set_dns_node("pclbhcpmt01");
+  int res=dim_set_dns_node("pclbcscalib01");
   if(res!=1){
-    printf("Cannot connect to pclbhcpmt01!!!\n");
+    printf("Cannot connect to pclbcscalib01!!!\n");
   }
   
   DoSetPattType(0,0);

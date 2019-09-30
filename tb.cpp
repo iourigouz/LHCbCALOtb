@@ -23,7 +23,6 @@
 #include "TH1D.h"
 #include "TTree.h"
 
-#include "specs_operations.h"
 #include "vme_operations.h"
 #include "digitizer_operations.h"
 
@@ -134,21 +133,6 @@ int start_run(const char* task){
     return 2;
   }
   
-  if(g_rp.SPECS_used){
-    if(0!=specs_open(2,-1,2,-1)){
-      printf("cannot open SPECS, stop.\n");
-      return 3;
-    }
-    if(0!=write_HV()){
-      printf(" cannot write HV, stop.\n");
-      return 4;
-    }
-    if(0!=write_ULED()){
-      printf(" cannot write ULED, stop.\n");
-      return 5;
-    }
-  }
-  
   if(0==strcmp(g_config,"on") ||
      0==strcmp(g_config,"off")
      ) return 0;
@@ -223,11 +207,6 @@ int stop_run(){
     return 4;
   }
   
-  if(0!=specs_close()){
-    printf("%s: error in specs_close\n",__func__);
-    return 4;
-  }
-  
   dimsrv_deletehistsvc();
   
   closeROOTfile();
@@ -246,7 +225,6 @@ int exit_server(){
   
   int res=0;
   res=vme_close();
-  res|=specs_close();
   res|=digitizer_close();
   
   return res;
@@ -345,58 +323,76 @@ int main(int argc, char *argv[]){
       if( (retwait & VME_WAIT_OK) ){
         if( VME_WAIT_SIG == (retwait & VME_WAIT_SIG) ){
           g_pattern=g_rp.SIGpatt;
+          bool adcerr=false, tdcerr=false, digreaderr=false, digclearerr=false;
           
-          if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC, SIG\n",__func__,g_ievt);
-          if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
-          if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
-          if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          if(0!=vme_readADC())      adcerr=true;
+          if(0!=vme_readTDC())      tdcerr=true;
+          if(0!=digitizer_read())   digreaderr=true;
+          if(0!=digitizer_clear())  digclearerr=true;
           
           fill_all();
           g_ievt++; g_nsig++;
-      
+          
+          if(adcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(tdcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readTDC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(digreaderr)  printf("%s ev%6d: ret=0x%X, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(digclearerr) printf("%s ev%6d: ret=0x%X, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          
           if( (1==g_ievt) || (0==g_ievt%1000) )
-            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
-                   g_t, g_ievt, g_nped, g_nled, g_nsig);
+            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n", g_t, g_ievt, g_nsig, g_nled, g_nped);
         }
         if( VME_WAIT_LED == (retwait & VME_WAIT_LED) ){
           g_pattern=g_rp.LEDpatt;
+          bool adcerr=false, tdcerr=false, digreaderr=false, digclearerr=false;
           
-          if(0!=vme_pulseLED())     printf("%s ev%6d: WARNING error vme_pulseLED\n",__func__,g_ievt);
+          if(0!=vme_pulseLED())     printf("%s ev%6d: ret=0x%X, WARNING error vme_pulseLED\n",__func__,g_ievt,retwait);
+          usleep(10);
           
-          if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC, LED\n",__func__,g_ievt);
-          if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
-          if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
-          if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          if(0!=vme_readADC())      adcerr=true;     
+          if(0!=vme_readTDC())      tdcerr=true;     
+          if(0!=digitizer_read())   digreaderr=true; 
+          if(0!=digitizer_clear())  digclearerr=true;
           
           fill_all();
           g_ievt++; g_nled++;
       
-          if( (1==g_ievt) || (0==g_ievt%1000) )
-            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
-                   g_t, g_ievt, g_nped, g_nled, g_nsig);
+          if(adcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(tdcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readTDC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(digreaderr)  printf("%s ev%6d: ret=0x%X, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(digclearerr) printf("%s ev%6d: ret=0x%X, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          
+          if( (1==g_ievt) || (0==g_ievt%1000) ) printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
+                   g_t, g_ievt, g_nsig, g_nled, g_nped);
         }
         if( VME_WAIT_PED == (retwait & VME_WAIT_PED) ){
           g_pattern=g_rp.PEDpatt;
+          bool adcerr=false, tdcerr=false, digreaderr=false, digclearerr=false;
           
-          if(0!=vme_pulsePED())     printf("%s ev%6d: WARNING error vme_pulsePED\n",__func__,g_ievt);
+          if(0!=vme_pulsePED())     printf("%s ev%6d: ret=0x%X, WARNING error vme_pulsePED\n",__func__,g_ievt,retwait);
+          usleep(10);
           
-          if(0!=vme_readADC())      printf("%s ev%6d: WARNING error vme_readADC, PED\n",__func__,g_ievt);
-          if(0!=vme_readTDC())      printf("%s ev%6d: WARNING error vme_readTDC\n",__func__,g_ievt);
-          if(0!=digitizer_read())   printf("%s ev%6d: WARNING error digitizer_read\n",__func__,g_ievt);
-          if(0!=digitizer_clear())  printf("%s ev%6d: WARNING error digitizer_clear_data\n",__func__,g_ievt);
+          if(0!=vme_readADC())      adcerr=true;     
+          if(0!=vme_readTDC())      tdcerr=true;     
+          if(0!=digitizer_read())   digreaderr=true; 
+          if(0!=digitizer_clear())  digclearerr=true;
           
           fill_all();
           g_ievt++; g_nped++;
-      
-          if( (1==g_ievt) || (0==g_ievt%1000) )
-            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
-                   g_t, g_ievt, g_nped, g_nled, g_nsig);
+          
+          if(adcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(tdcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readTDC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(digreaderr)  printf("%s ev%6d: ret=0x%X, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          if(digclearerr) printf("%s ev%6d: ret=0x%X, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
+          
+          if( (1==g_ievt) || (0==g_ievt%1000) ) printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
+                   g_t, g_ievt, g_nsig, g_nled, g_nped);
         }
         
         if( VME_WAIT_SIG == (retwait & VME_WAIT_SIG) ){
           if(0!=vme_clearCORBO())   printf("%s ev%6d: WARNING error vme_clearCORBO\n",__func__,g_ievt);
         }
-        else if( (VME_WAIT_LED == (retwait & VME_WAIT_LED)) || (VME_WAIT_PED == (retwait & VME_WAIT_PED)) ){
+        // else // !!! IG
+        if( (VME_WAIT_LED == (retwait & VME_WAIT_LED)) || (VME_WAIT_PED == (retwait & VME_WAIT_PED)) ){
           //int irqvec=0, irqlev=0;
           //vme_getirq(irqlev,irqvec);
           //if(0!=irqlev)printf("%s ev%6d irqlev %d, irqvec 0X%X, evkind %d\n",__func__,g_ievt,irqlev,irqvec,retwait%8);

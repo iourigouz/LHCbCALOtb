@@ -6,8 +6,8 @@ CAENFLAGS = -DLINUX
 #CXXFLAGS = -O0 -Wall -fPIC -g -gdwarf-2 
 CXXFLAGS = -O0 -w -fPIC -g -gdwarf-2 
 CFLAGS += -O0 -fPIC -g -gdwarf-2 
-LIBRARIES = -L$(ROOTSYS)/lib -lCore -lCint -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lGui 
-LIBRARIES += -lspecs -lSpecsUser -ldim
+LIBRARIES = -L$(ROOTSYS)/lib -lCore -lCint -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lGui -lRIO
+LIBRARIES += -ldim
 LIBRARIES += -lCAENVME -lCAENDigitizer -lCAENComm
 LIBRARIES += -pthread -lm -ldl -rdynamic -lstdc++ 
 
@@ -17,7 +17,7 @@ SOFLAGS  = -shared -Wl,-soname,
 NAME     = tb
 
 SOURCE := tb.cpp ntp.cpp runparam.cpp
-SOURCE += specs_operations.cpp vme_operations.cpp
+SOURCE += vme_operations.cpp
 SOURCE += digitizer_operations.cpp wavedump_functions.cpp 
 OBJECTS := $(patsubst %.cpp,%.o,$(SOURCE))
 

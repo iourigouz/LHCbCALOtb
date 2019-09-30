@@ -27,7 +27,7 @@ extern bool g_write;
 
 extern int g_nTDCclear;
 
-extern double g_t, g_t0;
+extern double g_t, g_t0, g_tprev;
 extern int g_pattern; // 0=PED, 1=LED, 2=SIG
 extern int g_ADC[NADCCHAN];
 
