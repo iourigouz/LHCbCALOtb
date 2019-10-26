@@ -25,14 +25,12 @@
 #include "TH1D.h"
 #include "TProfile.h"
 
-#include "getVal.h"
-
 class MyMainFrame : public TGMainFrame {
 
  private:
   TRootEmbeddedCanvas  *fEcan;
   TGLabel *lbRunnumber;
-  TGTextButton *tbEnable, *tbStartRun;
+  TGTextButton *tbEnable, *tbStartRun, *tbAddComment;
   TGLabel *lbNrun, *lbTbeg, *lbTdur, *lbRunStatus, *lbNLED, *lbNPED, *lbNSIG, *lbNTOT, *lbConf;
   TGStatusBar          *fStatusBar;
   TGComboBox *cbPatt, *cbType, *cbHist;
@@ -52,6 +50,7 @@ class MyMainFrame : public TGMainFrame {
   
   void DoEnableStartRun();
   void DoStartRun();
+  void DoAddComment();
   
   void fillHistCombo(const char* cpatt, const char* ctype);
   void DoSetPattType(Int_t wId, Int_t id);

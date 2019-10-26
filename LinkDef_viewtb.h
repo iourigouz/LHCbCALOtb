@@ -12,6 +12,7 @@
 #pragma link off all functions;
 #pragma link C++ class MyMainFrame;
 #pragma link C++ class getVal;
+#pragma link C++ class getComment;
 
 #endif 
 

@@ -38,6 +38,9 @@
 
 #include "MyMainFrame.h"
 
+#include "getVal.h"
+#include "getComment.h"
+
 #include "dic.hxx"
 #include "dim_common.h"
 
@@ -46,6 +49,7 @@ bool g_running_prev=false;
 
 bool g_startrun=false;
 bool g_stoprun=false;
+bool g_addcomment=false;
 
 bool g_draw_hist=false;
 bool g_auto_draw=false;
@@ -107,6 +111,36 @@ DIMHIST g_d_DIG_SIGMAX_ref[NDT5742CHAN];
 // end DIM stuff
 
 ClassImp(MyMainFrame)
+
+int add_logbook(const char* filenam, const char* config, const int irun, const char* state, const char* comment){
+  FILE* f=fopen(filenam,"a");
+  if(!f)return -1;
+
+  char str[256];
+  
+  TTimeStamp tst;
+  UInt_t year,month,day,hour,min,sec;
+  tst.GetDate(kFALSE,0,&year,&month,&day);
+  tst.GetTime(kFALSE,0,&hour,&min,&sec);
+  
+  fprintf(f," %4.4d/%2.2d/%2.2d %2.2d:%2.2d:%2.2d %s_%2.2d %s\n",
+          year,month,day, hour,min,sec, config,irun,state);
+  
+  int s=0;
+  memset(str,0,sizeof(str));
+  for(int i=0; i<(int)strlen(comment); ++i){
+    if( ('\n'==comment[i]) || (s>250) ){
+      str[s]=0;
+      fprintf(f,"            %s\n",str);
+      s=0;
+      memset(str,0,sizeof(str));
+    }
+    else if(comment[i]>31)str[s++]=comment[i];
+  }
+  fprintf(f,"            %s\n",str);
+  fclose(f);
+  return 0;
+}
 
 int list_dimhists(){
   int nhists=0;
@@ -476,12 +510,15 @@ void MyMainFrame::DoStartRun(){
   if(!g_startrun && !g_stoprun){
     const char* buttontext=tbStartRun->GetText()->GetString();
     char BUTTONTEXT[256]; memset(BUTTONTEXT,0,sizeof(BUTTONTEXT));
-    for(int i=0; i<sizeof(BUTTONTEXT) && (BUTTONTEXT[i]=toupper(buttontext[i])); ++i){;};
+    for(int i=0; i<(int)sizeof(BUTTONTEXT) && (BUTTONTEXT[i]=toupper(buttontext[i])); ++i){;};
     
     if(0!=strstr(BUTTONTEXT,"START"))g_startrun=true;
     else if(0!=strstr(BUTTONTEXT,"STOP"))g_stoprun=true;
   }
-  
+}
+
+void MyMainFrame::DoAddComment(){
+  g_addcomment=true;
 }
 
 void MyMainFrame::DoSetPattType(Int_t wId, Int_t id){
@@ -537,9 +574,9 @@ void MyMainFrame::drawHist()
   TCanvas *c1 = fEcan->GetCanvas();
   c1->cd();
   
-  char type[8],patt[8],cell[32],suppl[32],    str[128];
+  char type[8],patt[8],cell[32],suppl[32];
   int chan=-1;
-  int nel=parse_service_name(g_name_selected, type, patt, cell, chan, suppl);
+  parse_service_name(g_name_selected, type, patt, cell, chan, suppl);
   if(0==strcmp(cell,"summ")){
     void* addr=address_dimsummary(type, patt, cell, chan, suppl);
     void* addr_ref=address_ref_dimsummary(type, patt, cell, chan, suppl);
@@ -599,9 +636,7 @@ void MyMainFrame::fillRunStatus(){
   sprintf(str," RUN %12d",d->irun);
   lbNrun->SetText(str);
   
-  time_t seconds=(time_t)floor(d->starttime);
-  int nano=(int)((d->starttime-seconds)*1e9);
-  TTimeStamp tst(seconds,nano);
+  TTimeStamp tst;
   UInt_t year,month,day,hour,min,sec;
   tst.GetDate(kFALSE,0,&year,&month,&day);
   tst.GetTime(kFALSE,0,&hour,&min,&sec);
@@ -738,7 +773,7 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
   char *server, *node, *service, *format; 
   int typ;
   
-  bool tb_daq_server_present=false;
+  //bool tb_daq_server_present=false;
   
   char type[8],patt[8],cell[32],suppl[32],    str[128];
   int chan=-1;
@@ -747,12 +782,13 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
   std::map<std::string,int> mh;
   std::map<std::string,int> ms;
   
-  TTimeStamp tst1;
-  double t1=tst1.AsDouble();
+  //TTimeStamp tst1;
+  //double t1=tst1.AsDouble();
+  
   dbr.getServers(); 
   while(dbr.getNextServer(server, node))     { 
     if(0==strcmp(server,"TB_DAQ")){
-      tb_daq_server_present=true;
+      //tb_daq_server_present=true;
       dbr.getServerServices(server); 
       while( (typ=dbr.getNextServerService(service, format)) ) { // DIMSTAT
         if(0==strcmp("TB_DAQ_STATUS",service)){
@@ -760,7 +796,7 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
                             0, 0, &g_d_status_dummy, sizeof(g_d_status_dummy));
         }
         else if(0!=strstr(service,"summ_")){ // DIMSUMMARY
-          int nel=parse_service_name(service, type, patt, cell, chan, suppl);
+          parse_service_name(service, type, patt, cell, chan, suppl);
           void* addr=address_dimsummary(type, patt, cell, chan, suppl);
           dic_info_service (service, ONCE_ONLY, 60, addr, sizeof(DIMSUMMARY), 
                             0, 0, &g_d_summ_dummy, sizeof(g_d_summ_dummy));
@@ -770,7 +806,7 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
           }
         }
         else{ // DIMHIST
-          int nel=parse_service_name(service, type, patt, cell, chan, suppl);
+          parse_service_name(service, type, patt, cell, chan, suppl);
           void* addr=address_dimhist(type, patt, cell, chan, suppl);
           dic_info_service (service, ONCE_ONLY, 60, addr, sizeof(DIMHIST), 
                             0, 0, &g_d_hist_dummy, sizeof(g_d_hist_dummy));
@@ -810,16 +846,23 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
     g_auto_draw=false;
     tbAutoDraw->SetState(kButtonUp,kFALSE);
     
-    char question[256], answer[256];
+    char question[256], answer[256], comment[10240];
     sprintf(question,"CONFIG NAME?");
     sprintf(answer,"%s",g_d_status.conf);
-    getVal *gV = new getVal(this, question, answer);
+    memset(comment,0,sizeof(comment));
+    getVal *gV = new getVal(this, question, answer, comment);
     gV->Popup();
     
     if(0==strcmp(question,"OK")){
       reset_dimhists();
       int ndimhist=list_dimhists();
       printf("%s: %d dimhists found after total reset\n",__func__,ndimhist);
+      
+      //printf("your comment has %lu symbols\n",strlen(comment));
+      //if(strlen(comment)>1)printf("%s\n",comment);
+      
+      add_logbook("/home/yuri/viewtb_comments.txt",g_d_status.conf,g_d_status.irun+1,"STARTING",comment);
+      
       sprintf(str,"STARTRUN %s",answer);
       sendcom(str);
     }
@@ -835,17 +878,44 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
     g_auto_draw=false;
     tbAutoDraw->SetState(kButtonUp,kFALSE);
     
-    char question[256], answer[256];
+    char question[256], answer[256], comment[10240],state[256];
     sprintf(question,"ARE YOU SURE TO STOP THE RUN?");
     sprintf(answer,"%s",g_d_status.conf);
-    getVal *gV = new getVal(this, question, answer);
+    memset(comment,0,sizeof(comment));
+    getVal *gV = new getVal(this, question, answer, comment);
     gV->Popup();
     
     if(0==strcmp(question,"OK")){
+      //printf("your comment has %lu symbols\n",strlen(comment));
+      //if(strlen(comment)>1)printf("%s\n",comment);
+      
+      sprintf(state,"STOPPING, %d signal, %d LED, %d PED",
+              g_d_status.nsig,g_d_status.nled,g_d_status.nped);
+      add_logbook("/home/yuri/viewtb_comments.txt",g_d_status.conf,g_d_status.irun,state,comment);
+      
       sendcom("STOPRUN");
+      for(int i=0; i<255 && (answer[i]=toupper(answer[i])); ++i){}
+      if( (0==strcmp("STOPSRV",answer)) || (0==strcmp("EXITSRV",answer)) ){
+        sendcom("EXITSRV");
+      }
     }
   }
   
+  if(g_addcomment){
+    g_addcomment=false;
+    
+    char answer[256], comment[10240];
+    memset(answer,0,sizeof(answer));
+    memset(comment,0,sizeof(comment));
+    getComment *gC = new getComment(this, answer, comment);
+    gC->Popup();
+    
+    if(0==strcmp(answer,"OK")){
+      //printf("your comment has %lu symbols\n",strlen(comment));
+      //if(strlen(comment)>1)printf("%s\n",comment);
+      add_logbook("/home/yuri/viewtb_comments.txt",g_d_status.conf,g_d_status.irun,"COMMENT",comment);
+    }
+  }  
   return kTRUE;
 }
 
@@ -922,10 +992,16 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   hframv->AddFrame(tbStartRun, new TGLayoutHints(kLHintsTop|kLHintsCenterX, 2, 2, 2, 2));
   tbStartRun->SetEnabled(false);
   
+  tbAddComment = new TGTextButton(hframv, "Add comment", 12);
+  //tbStartRun->SetFont(font16b->GetFontStruct());
+  tbAddComment->Connect("Released()", "MyMainFrame", this, "DoAddComment()");
+  hframv->AddFrame(tbAddComment, new TGLayoutHints(kLHintsTop|kLHintsCenterX, 2, 2, 20, 2));
+  tbAddComment->SetEnabled(true);
+  
   lbNrun=new TGLabel(hframv," RUN  ----------------");
   //lbNrun->SetTextFont(font16b);
   lbNrun->SetTextJustify(kTextLeft|kTextTop);
-  hframv->AddFrame(lbNrun, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 50, 2));
+  hframv->AddFrame(lbNrun, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 30, 2));
   
   lbTbeg=new TGLabel(hframv," STARTED:      ---:---:---");
   //lbTbeg->SetTextFont(font16b);
@@ -1044,8 +1120,9 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
 void MyMainFrame::Init(){
   gStyle->SetOptStat(1112210);
   
-  //int res=dim_set_dns_node("pclbhcpmt01");
-  int res=dim_set_dns_node("pclbcscalib01");
+  int res=1;
+  //res=dim_set_dns_node("pclbhcpmt02");
+  //res=dim_set_dns_node("pclbcscalib01");
   if(res!=1){
     printf("Cannot connect to pclbcscalib01!!!\n");
   }

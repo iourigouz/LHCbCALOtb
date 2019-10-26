@@ -6,7 +6,7 @@
 #include "TGTextEdit.h"
 #include "TGLabel.h"
 
-class getVal {
+class getComment {
 
 private:
   TGTransientFrame *fMain;   // main frame of this widget
@@ -15,15 +15,12 @@ private:
   TGTextEdit       *fEdit;   // text edit widget
   TGTextButton     *fCANCEL; // CANCEL button
 
-  char *Val;   // address of the Val
-  char *Question; //address of the question, to put OK or CANCEL
+  char *Answer; //address of the answer, to put OK or CANCEL
   char* Comment; // address of the comment, the string separator is assumed \n
 
-  char bufVal[512];
-
 public:
-  getVal(const TGWindow *main, char* question, char* val, char* comment);
-   virtual ~getVal();
+  getComment(const TGWindow *main, char* answer, char* comment);
+   virtual ~getComment();
 
    void   SetTitle();
    void   Popup();
@@ -33,6 +30,6 @@ public:
    void   DoOK();
    void   DoCANCEL();
 
-   ClassDef(getVal, 0)
+   ClassDef(getComment, 0)
 };
 

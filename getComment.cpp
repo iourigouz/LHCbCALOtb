@@ -19,56 +19,40 @@
 #include "TClass.h"
 #include "TString.h"
 
-#include "getVal.h"
+#include "getComment.h"
 
-ClassImp(getVal)
+ClassImp(getComment)
 
-getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
+getComment::getComment(const TGWindow *main, char* answer, char* comment)
 {
-  Question=question;
-  Val = val;
-  strcpy(bufVal,val);
-  //  Val[0]='\0';
+  Answer=answer;
   Comment=comment;
   
   fMain = new TGTransientFrame(gClient->GetRoot(), main, 270, 400);
-  fMain->Connect("CloseWindow()", "getVal", this, "CloseWindow()");
+  fMain->Connect("CloseWindow()", "getComment", this, "CloseWindow()");
   fMain->DontCallClose(); // to avoid double deletions.
   
   // use hierarchical cleaning
   fMain->SetCleanup(kDeepCleanup);
   
-  // Create a horizontal frame for username
-  TGHorizontalFrame *hframVal = new TGHorizontalFrame(fMain, 270, 40);
-  
-  TGLabel *tVal;
-  if(question)tVal=new TGLabel(hframVal,question);
-  else tVal=new TGLabel(hframVal,"INPUT:");
-  
-  hframVal->AddFrame(tVal, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
-  fVal=new TGTextEntry(hframVal,bufVal);
-  hframVal->AddFrame(fVal, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
-  fMain->AddFrame(hframVal,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
-  fVal->Resize(150,fVal->GetDefaultHeight());
-
   TGHorizontalFrame *hframCom = new TGHorizontalFrame(fMain, 270, 40);
-  TGLabel *tCom=new TGLabel(hframCom,"Comments:");
+  TGLabel *tCom=new TGLabel(hframCom,"Enter a comment:");
   hframCom->AddFrame(tCom, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fMain->AddFrame(hframCom,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
 
   fEdit = new TGTextEdit(fMain, 270, 140, kSunkenFrame | kDoubleBorder);
   fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3));
-  fEdit->Connect("Closed()", "getVal", this, "DoCANCEL()");
+  fEdit->Connect("Closed()", "getComment", this, "DoCANCEL()");
 
   // Create a horizontal frame for OK and CANCEL buttons
   TGHorizontalFrame *hframButt = new TGHorizontalFrame(fMain, 270, 50);
   fOK = new TGTextButton(hframButt, "  &OK  ");
-  //fOK->SetToolTipText("YES, PLEASE save to DB",200);
-  fOK->Connect("Released()", "getVal", this, "DoOK()");
+  //fOK->SetToolTipText("YES, PLEASE add the comment to the logbook",200);
+  fOK->Connect("Released()", "getComment", this, "DoOK()");
   hframButt->AddFrame(fOK, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fCANCEL = new TGTextButton(hframButt, "  &CANCEL  ");
-  //fCANCEL->SetToolTipText("NO, DO NOT save to DB",200);
-  fCANCEL->Connect("Released()", "getVal", this, "DoCANCEL()");
+  //fCANCEL->SetToolTipText("NO, DO NOT add the comment to the logbook",200);
+  fCANCEL->Connect("Released()", "getComment", this, "DoCANCEL()");
   hframButt->AddFrame(fCANCEL, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fMain->AddFrame(hframButt,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
 
@@ -82,37 +66,36 @@ getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
   fMain->CenterOnParent(kTRUE, TGTransientFrame::kRight);
 }
 
-getVal::~getVal()
+getComment::~getComment()
 {
   // Delete editor dialog.
 
   fMain->DeleteWindow();  // deletes fMain
 }
 
-void getVal::Popup()
+void getComment::Popup()
 {
   fMain->MapWindow();
   gClient->WaitFor(fMain);
 }
 
-void getVal::SetTitle()
+void getComment::SetTitle()
 {
-  fMain->SetWindowName("getVal");
-  fMain->SetIconName("getVal");
+  fMain->SetWindowName("getComment");
+  fMain->SetIconName("getComment");
 }
 
-void getVal::CloseWindow()
+void getComment::CloseWindow()
 {
   // Called when closed via window manager action.
 
   delete this;
 }
 
-void getVal::DoOK()
+void getComment::DoOK()
 {
   // Handle ok button.
-  strcpy(Val,fVal->GetText());
-  strcpy(Question,"OK");
+  strcpy(Answer,"OK");
   
   TString tstrcomm=(fEdit->GetText()->AsString());
   const char* txtcomm=(const char*)tstrcomm;
@@ -121,12 +104,11 @@ void getVal::DoOK()
   CloseWindow();
 }
 
-void getVal::DoCANCEL()
+void getComment::DoCANCEL()
 {
   // Handle ok button.
 
-  //Unam[0]='\0';
-  strcpy(Question,"CANCEL");
+  strcpy(Answer,"CANCEL");
   
   CloseWindow();
 }

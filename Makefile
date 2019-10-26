@@ -1,4 +1,4 @@
-CXX      = g++
+CXX      = g++ -std=c++11
 CC       = gcc
 CPPFLAGS = -I$(ROOTSYS)/include 
 CAENFLAGS = -DLINUX
@@ -6,7 +6,7 @@ CAENFLAGS = -DLINUX
 #CXXFLAGS = -O0 -Wall -fPIC -g -gdwarf-2 
 CXXFLAGS = -O0 -w -fPIC -g -gdwarf-2 
 CFLAGS += -O0 -fPIC -g -gdwarf-2 
-LIBRARIES = -L$(ROOTSYS)/lib -lCore -lCint -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lGui -lRIO
+LIBRARIES = -L$(ROOTSYS)/lib -lCore -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lGui -lRIO -lASImage -lASImageGui
 LIBRARIES += -ldim
 LIBRARIES += -lCAENVME -lCAENDigitizer -lCAENComm
 LIBRARIES += -pthread -lm -ldl -rdynamic -lstdc++ 

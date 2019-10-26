@@ -274,6 +274,7 @@ typedef struct dimSummary{
     char str[2048]; memset(str,0,sizeof(str));
     strcpy(str,binlabels);
     int nlab=readline_strings(str, ',', nbins+2, s);
+    if(nlab<nbins+2)printf("TH1 %s too few bin labels\n",name);
     bool created=false;
     if(!h){
       h=new TProfile(name,title,nbins,xmin,xmax,-1e10,1e10,"S");
@@ -307,6 +308,7 @@ typedef struct dimSummary{
     char str[2048]; memset(str,0,sizeof(str));
     strcpy(str,binlabels);
     int nlab=readline_strings(str, ',', nbins+2, s);
+    if(nlab<nbins+2)printf("TH1 %s too few bin labels\n",name);
     bool created=false;
     if(!h){
       h=new TH1D(name,title,nbins,xmin,xmax);

@@ -139,7 +139,8 @@ DimCommand* g_cmnd;
 //
 // end online histos
 // DIM stuff
-char g_dimdns[128]="pclbcscalib01";
+//char g_dimdns[128]="pclbcscalib01";
+char g_dimdns[128]="localhost";
 char g_servernam[128]="TB_DAQ";
 char g_cmdNam[128]="TB_DAQ_CMD";
 char g_statusNam[128]="TB_DAQ_STATUS";
@@ -1337,7 +1338,7 @@ void update_dimservices(){
 
 int dimsrv_init(){
   if(!g_dimsrv_initialized){
-    int ires=dim_set_dns_node (g_dimdns);
+    //int ires=dim_set_dns_node (g_dimdns);
     
     if(server_started()){
       printf("%s: DIM server is already running\n",__func__);
