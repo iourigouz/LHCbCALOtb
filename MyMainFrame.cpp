@@ -636,8 +636,9 @@ void MyMainFrame::fillRunStatus(){
   sprintf(str," RUN %12d",d->irun);
   lbNrun->SetText(str);
   
-  TTimeStamp tst;
   UInt_t year,month,day,hour,min,sec;
+  int stm=d->starttime;
+  TTimeStamp tst((time_t)stm,0);
   tst.GetDate(kFALSE,0,&year,&month,&day);
   tst.GetTime(kFALSE,0,&hour,&min,&sec);
   sprintf(str," STARTED:      %2.2d:%2.2d:%2.2d",hour,min,sec);

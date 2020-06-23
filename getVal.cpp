@@ -56,7 +56,7 @@ getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
   hframCom->AddFrame(tCom, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fMain->AddFrame(hframCom,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
 
-  fEdit = new TGTextEdit(fMain, 270, 140, kSunkenFrame | kDoubleBorder);
+  fEdit = new TGTextEdit(fMain, 270, 50, kSunkenFrame | kDoubleBorder);
   fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3));
   fEdit->Connect("Closed()", "getVal", this, "DoCANCEL()");
 

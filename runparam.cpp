@@ -265,7 +265,7 @@ void runParam::read(const char* fnam){
         if(nit>3 && nit1>0 && nit2>0 &&nit3>0)setLED(n,(int)limited(v,0,215),limited(z,0,5));
       }
       else if(0==strcmp(what,"DATACONN")){
-        if(nit>3 >> nit3>0)setChanDataConn(cn,cv,(int)z);
+        if(nit>3 && nit3>0)setChanDataConn(cn,cv,(int)z);
       }
       else if(0==strcmp(what,"VME_ADC1")){
         if(nit>1 && goodhex(cn,&u))VME_ADC1=u;
