@@ -57,6 +57,10 @@ class runParam {
   double HV[MAXCHANS];
   int datatype[MAXCHANS];  // 1=ADC; 2=TDC; 3=DIG
   int datachan[MAXCHANS];
+  // polarity for presentation. meaningful only for DIG
+  // negative (default): A=ped-min
+  // positive: A=max-ped
+  int polarity[MAXCHANS];  // 777-positive, otherwise negative
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;

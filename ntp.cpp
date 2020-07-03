@@ -584,8 +584,9 @@ void closeROOTfile(){
 }
 
 double getped_742(int n, float* d){
-  int nfirst=10;
-  if(n<nfirst)return 0;
+  int nfirst=n;
+  if(nfirst>100)nfirst=100;
+  if(nfirst<=0)return 0;
   
   double s=0;
   for(int i=0; i<nfirst; ++i)   s+=d[i]/nfirst;
@@ -593,8 +594,8 @@ double getped_742(int n, float* d){
 }
 
 double getmax_742(int n, float* d){
-  int nfirst=10;
-  if(n<nfirst)return 0;
+  int nfirst=25;
+  if(n<=nfirst)return 0;
   
   double s=-1e9;
   for(int i=0; i<n; ++i) if(s<d[i])s=d[i];
@@ -602,8 +603,8 @@ double getmax_742(int n, float* d){
 }
 
 double getmin_742(int n, float* d){
-  int nfirst=10;
-  if(n<nfirst)return 0;
+  int nfirst=25;
+  if(n<=nfirst)return 0;
   
   double s=1e9;
   for(int i=0; i<n; ++i) if(s>d[i])s=d[i];
@@ -656,29 +657,40 @@ void fill_all(){
       else if(JCH>=9 && JCH<=16)i=JCH-1;
       int ich=g_rp.findch("DIG",i);         // entry number in runparams
       const char *nam=0;
-      int ibin=0;
+      int ibin=0, pol=0;
       if(ich>=0) {
         nam=&(g_rp.chnam[ich][0]); // channel name
+        pol=g_rp.polarity[ich];
         ibin=findbin(g_hsumm_DIG_PED, nam); // assuming all DIG summary histograms have same bin titles.
       }
       if(g_used742[JCH]){
-        double dped=getped_742(g_nDT5742[JCH],g_evdata742[JCH]);
-        double dmax=getmax_742(g_nDT5742[JCH],g_evdata742[JCH]);
-        double dmin=getmin_742(g_nDT5742[JCH],g_evdata742[JCH]);
+        // determine ped from the first 25 samples
+        double dped=getped_742(25,g_evdata742[JCH]);
+        // determine max and min from all samples except 10 last ones 
+        // (for our DT5742, the last 10 samples are 10-20 ADC counts too high)
+        double damp=0,dmin=0,dmax=0;
+        if(777==pol){// positive polarity
+          dmax=getmax_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          damp=dmax-dped;
+        }
+        else{  // negative polarity
+          dmin=getmin_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          damp=dped-dmin;
+        }
         if(g_rp.PEDpatt==g_pattern){
           if(g_hDIG_PEDPED[i])g_hDIG_PEDPED[i]->Fill(dped);
-          if(g_hDIG_PEDMAX[i])g_hDIG_PEDMAX[i]->Fill(dped-dmin);
-          g_hsumm_DIG_PED->Fill(ibin-0.5,dped-dmin);
+          if(g_hDIG_PEDMAX[i])g_hDIG_PEDMAX[i]->Fill(damp);
+          g_hsumm_DIG_PED->Fill(ibin-0.5,damp);
         }
         else if(g_rp.LEDpatt==g_pattern){
           if(g_hDIG_LEDPED[i])g_hDIG_LEDPED[i]->Fill(dped);     
-          if(g_hDIG_LEDMAX[i])g_hDIG_LEDMAX[i]->Fill(dped-dmin);
-          g_hsumm_DIG_LED->Fill(ibin-0.5,dped-dmin);
+          if(g_hDIG_LEDMAX[i])g_hDIG_LEDMAX[i]->Fill(damp);
+          g_hsumm_DIG_LED->Fill(ibin-0.5,damp);
         }
         else if(g_rp.SIGpatt==g_pattern){
           if(g_hDIG_SIGPED[i])g_hDIG_SIGPED[i]->Fill(dped);     
-          if(g_hDIG_SIGMAX[i])g_hDIG_SIGMAX[i]->Fill(dped-dmin);
-          g_hsumm_DIG_SIG->Fill(ibin-0.5,dped-dmin);
+          if(g_hDIG_SIGMAX[i])g_hDIG_SIGMAX[i]->Fill(damp);
+          g_hsumm_DIG_SIG->Fill(ibin-0.5,damp);
         }
       }
     }

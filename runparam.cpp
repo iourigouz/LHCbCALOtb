@@ -89,6 +89,7 @@ void runParam::reset(){
   for(int ich=0; ich<sizeof(HVchan)/sizeof(int); ++ich)HVchan[ich]=-1; //  all illegal
   memset(datatype,0,sizeof(datatype));
   memset(datachan,0,sizeof(datachan));
+  memset(polarity,0,sizeof(polarity));
   
   ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
   VME_ADC1 = VME_ADC2 = VME_ADC3 = 0;
@@ -139,6 +140,13 @@ void runParam::setChanDataConn(char* nam, char* typ, int ich){
     printf("%s WARNING wrong datatype: %s for %s\n",__func__,typ,nam);
     return;
   }
+  
+  int pol=0;
+  int sl=strlen(nam);
+  if('P'==nam[sl-2] && 'Z'==nam[sl-1]){
+    if(3==ityp)printf(" INFO %s: positive polarity requested for DIG %2.2d %s\n",__func__,ich,nam);
+    pol=777;
+  }
 
   int inamexist=-1, ichanexist=-1;
   for(int j=0; j<nchans; ++j){
@@ -155,6 +163,7 @@ void runParam::setChanDataConn(char* nam, char* typ, int ich){
     strncpy(&chnam[nchans][0],nam,MAXNAMELENGTH-1);
     datatype[nchans]=ityp;
     datachan[nchans]=ich;
+    polarity[nchans]=pol;
     nchans++;
   }
   else{// modify existing
@@ -163,6 +172,7 @@ void runParam::setChanDataConn(char* nam, char* typ, int ich){
       printf("%s WARNING: changing data chan for %s to busy %s%2.2d\n",__func__,nam,typ,ich);
     datatype[inamexist]=ityp;
     datachan[inamexist]=ich;
+    polarity[inamexist]=pol;
   }
 }
   

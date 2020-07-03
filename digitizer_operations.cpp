@@ -52,8 +52,13 @@ int digitizer_init(char* config_name){
   
   FILE* f_ini = fopen(ConfigFileName, "r");
   if (!f_ini) {
-    printf("%s: config file not found\n",__func__);
-    goto Close;
+    printf("%s: %s not found, trying default\n",__func__,ConfigFileName);
+    f_ini = fopen("DT5742_default.param", "r");
+    if (!f_ini) {
+      printf("%s: DT5742_default.param not found, exiting, crash expected\n",__func__);
+      goto Close;
+    }
+    else printf("%s: using DT5742_default.param\n",__func__);
   }
   ParseConfigFile(f_ini, &WDcfg);
   fclose(f_ini);
