@@ -37,7 +37,7 @@ typedef struct dimHist{
   
   void Copy(dimHist& h){
     this->Reset();
-    int maxbins=sizeof(cont)/sizeof(double);
+    int maxbins=sizeof(cont)/sizeof(double)-2;
     
     nbins=h.nbins;
     if(nbins>maxbins)nbins=maxbins;
@@ -49,13 +49,13 @@ typedef struct dimHist{
     strncpy(fmat,h.fmat,sizeof(fmat)-1);
     strncpy(name,h.name,sizeof(name)-1);
     strncpy(title,h.title,sizeof(title)-1);
-    for(int i=0; i<nbins; ++i)cont[i]=h.cont[i];
+    for(int i=0; i<nbins+2 && i<5000; ++i)cont[i]=h.cont[i];
   }
   
   void Subtract(dimHist& h){
     if(!h.isUsed())return;
     nentries-=h.nentries;
-    for(int i=0; i<nbins; ++i)cont[i]-=h.cont[i];
+    for(int i=0; i<nbins+2 && i<5000; ++i)cont[i]-=h.cont[i];
   }
   
   bool fill_TH1D(TH1D*& h){
@@ -72,7 +72,10 @@ typedef struct dimHist{
       h=new TH1D(name,title,nbins,xmin,xmax);
       created=true;
     }
-    for(int i=0; i<nbins+2; ++i)h->SetBinContent(i,cont[i]);
+    for(int i=0; i<nbins+2 && i<5000; ++i){
+      //if( (0==i) || (1==i) || (nbins==i) || (nbins+1==i) )printf("%s bin %d=%f\n",name,i,cont[i]);
+      h->SetBinContent(i,cont[i]);
+    }
     h->SetEntries(nentries);
     return created;
   }
@@ -80,7 +83,8 @@ typedef struct dimHist{
 
 
 template <class HIST> void fill_dimHist(dimHist *d, HIST *h){
-  int maxBins=4096;
+  
+  int maxBins=sizeof(d->cont)/sizeof(double)-2;
   
   d->nbins=h->GetXaxis()->GetNbins();
   d->xmin=h->GetXaxis()->GetXmin();

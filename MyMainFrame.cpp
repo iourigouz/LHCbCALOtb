@@ -80,10 +80,13 @@ DIMHIST g_d_dwc1x_SIG, g_d_dwc1y_SIG, g_d_dwc2x_SIG, g_d_dwc2y_SIG;
 DIMHIST g_d_dwc3x_SIG, g_d_dwc3y_SIG, g_d_dwc4x_SIG, g_d_dwc4y_SIG;
 DIMHIST g_d_DIG_LEDPED[NDT5742CHAN];
 DIMHIST g_d_DIG_LEDMAX[NDT5742CHAN];
+DIMHIST g_d_DIG_LEDWAV[NDT5742CHAN];
 DIMHIST g_d_DIG_PEDPED[NDT5742CHAN];
 DIMHIST g_d_DIG_PEDMAX[NDT5742CHAN];
+DIMHIST g_d_DIG_PEDWAV[NDT5742CHAN];
 DIMHIST g_d_DIG_SIGPED[NDT5742CHAN];
 DIMHIST g_d_DIG_SIGMAX[NDT5742CHAN];
+DIMHIST g_d_DIG_SIGWAV[NDT5742CHAN];
 // DIM dummies
 DIMSTAT g_d_status_dummy;
 DIMHIST g_d_hist_dummy;
@@ -104,10 +107,13 @@ DIMHIST g_d_dwc1x_SIG_ref, g_d_dwc1y_SIG_ref, g_d_dwc2x_SIG_ref, g_d_dwc2y_SIG_r
 DIMHIST g_d_dwc3x_SIG_ref, g_d_dwc3y_SIG_ref, g_d_dwc4x_SIG_ref, g_d_dwc4y_SIG_ref;
 DIMHIST g_d_DIG_LEDPED_ref[NDT5742CHAN];
 DIMHIST g_d_DIG_LEDMAX_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_LEDWAV_ref[NDT5742CHAN];
 DIMHIST g_d_DIG_PEDPED_ref[NDT5742CHAN];
 DIMHIST g_d_DIG_PEDMAX_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_PEDWAV_ref[NDT5742CHAN];
 DIMHIST g_d_DIG_SIGPED_ref[NDT5742CHAN];
 DIMHIST g_d_DIG_SIGMAX_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_SIGWAV_ref[NDT5742CHAN];
 // end DIM stuff
 
 ClassImp(MyMainFrame)
@@ -182,10 +188,13 @@ int list_dimhists(){
   for(int i=0; i<NDT5742CHAN; ++i){
     if(g_d_DIG_LEDPED[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_LEDPED[i].name);}
     if(g_d_DIG_LEDMAX[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_LEDMAX[i].name);}
+    if(g_d_DIG_LEDWAV[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_LEDWAV[i].name);}
     if(g_d_DIG_PEDPED[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_PEDPED[i].name);}
     if(g_d_DIG_PEDMAX[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_PEDMAX[i].name);}
+    if(g_d_DIG_PEDWAV[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_PEDWAV[i].name);}
     if(g_d_DIG_SIGPED[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_SIGPED[i].name);}
     if(g_d_DIG_SIGMAX[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_SIGMAX[i].name);}
+    if(g_d_DIG_SIGWAV[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_SIGWAV[i].name);}
   }
   return nhists;
 }
@@ -226,10 +235,13 @@ void reset_dimhists(){
   for(int i=0; i<NDT5742CHAN; ++i){
     g_d_DIG_LEDPED[i].Reset();
     g_d_DIG_LEDMAX[i].Reset();
+    g_d_DIG_LEDWAV[i].Reset();
     g_d_DIG_PEDPED[i].Reset();
     g_d_DIG_PEDMAX[i].Reset();
+    g_d_DIG_PEDWAV[i].Reset();
     g_d_DIG_SIGPED[i].Reset();
     g_d_DIG_SIGMAX[i].Reset();
+    g_d_DIG_SIGWAV[i].Reset();
   }
 }
 
@@ -278,6 +290,9 @@ void* address_dimhist(char* type, char* patt, char* cell, int chan, char* suppl)
       else if(0==strcmp(suppl,"MAX")){
         if(chan>=0)ret=(void*)&g_d_DIG_PEDMAX[chan];
       }
+      else if(0==strcmp(suppl,"WAV")){
+        if(chan>=0)ret=(void*)&g_d_DIG_PEDWAV[chan];
+      }
     }
     else if(0==strcmp(patt,"LED")){
       if(0==strcmp(suppl,"PED")){
@@ -286,6 +301,9 @@ void* address_dimhist(char* type, char* patt, char* cell, int chan, char* suppl)
       else if(0==strcmp(suppl,"MAX")){
         if(chan>=0)ret=(void*)&g_d_DIG_LEDMAX[chan];
       }
+      else if(0==strcmp(suppl,"WAV")){
+        if(chan>=0)ret=(void*)&g_d_DIG_LEDWAV[chan];
+      }
     }
     else if(0==strcmp(patt,"SIG")){
       if(0==strcmp(suppl,"PED")){
@@ -293,6 +311,9 @@ void* address_dimhist(char* type, char* patt, char* cell, int chan, char* suppl)
       }
       else if(0==strcmp(suppl,"MAX")){
         if(chan>=0)ret=(void*)&g_d_DIG_SIGMAX[chan];
+      }
+      else if(0==strcmp(suppl,"WAV")){
+        if(chan>=0)ret=(void*)&g_d_DIG_SIGWAV[chan];
       }
     }
   }
@@ -344,6 +365,9 @@ void* address_ref_dimhist(char* type, char* patt, char* cell, int chan, char* su
       else if(0==strcmp(suppl,"MAX")){
         if(chan>=0)ret=(void*)&g_d_DIG_PEDMAX_ref[chan];
       }
+      else if(0==strcmp(suppl,"WAV")){
+        if(chan>=0)ret=(void*)&g_d_DIG_PEDWAV_ref[chan];
+      }
     }
     else if(0==strcmp(patt,"LED")){
       if(0==strcmp(suppl,"PED")){
@@ -352,6 +376,9 @@ void* address_ref_dimhist(char* type, char* patt, char* cell, int chan, char* su
       else if(0==strcmp(suppl,"MAX")){
         if(chan>=0)ret=(void*)&g_d_DIG_LEDMAX_ref[chan];
       }
+      else if(0==strcmp(suppl,"WAV")){
+        if(chan>=0)ret=(void*)&g_d_DIG_LEDWAV_ref[chan];
+      }
     }
     else if(0==strcmp(patt,"SIG")){
       if(0==strcmp(suppl,"PED")){
@@ -359,6 +386,9 @@ void* address_ref_dimhist(char* type, char* patt, char* cell, int chan, char* su
       }
       else if(0==strcmp(suppl,"MAX")){
         if(chan>=0)ret=(void*)&g_d_DIG_SIGMAX_ref[chan];
+      }
+      else if(0==strcmp(suppl,"WAV")){
+        if(chan>=0)ret=(void*)&g_d_DIG_SIGWAV_ref[chan];
       }
     }
   }
@@ -476,10 +506,13 @@ void MyMainFrame::Do2Ref(){
   for(int i=0; i<NDT5742CHAN; ++i){
     if(g_d_DIG_LEDPED[i].isUsed())g_d_DIG_LEDPED_ref[i].Copy(g_d_DIG_LEDPED[i]);
     if(g_d_DIG_LEDMAX[i].isUsed())g_d_DIG_LEDMAX_ref[i].Copy(g_d_DIG_LEDMAX[i]);
+    if(g_d_DIG_LEDWAV[i].isUsed())g_d_DIG_LEDWAV_ref[i].Copy(g_d_DIG_LEDWAV[i]);
     if(g_d_DIG_PEDPED[i].isUsed())g_d_DIG_PEDPED_ref[i].Copy(g_d_DIG_PEDPED[i]);
     if(g_d_DIG_PEDMAX[i].isUsed())g_d_DIG_PEDMAX_ref[i].Copy(g_d_DIG_PEDMAX[i]);
+    if(g_d_DIG_PEDWAV[i].isUsed())g_d_DIG_PEDWAV_ref[i].Copy(g_d_DIG_PEDWAV[i]);
     if(g_d_DIG_SIGPED[i].isUsed())g_d_DIG_SIGPED_ref[i].Copy(g_d_DIG_SIGPED[i]);
     if(g_d_DIG_SIGMAX[i].isUsed())g_d_DIG_SIGMAX_ref[i].Copy(g_d_DIG_SIGMAX[i]);
+    if(g_d_DIG_SIGWAV[i].isUsed())g_d_DIG_SIGWAV_ref[i].Copy(g_d_DIG_SIGWAV[i]);
   }
 }
 
@@ -721,10 +754,13 @@ void MyMainFrame::fillHistCombo(const char* cPatt, const char* cType){
   for(int i=0; i<NDT5742CHAN; ++i){
     if(g_d_DIG_LEDPED[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_LEDPED[i].name,nhists));nhists++;}
     if(g_d_DIG_LEDMAX[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_LEDMAX[i].name,nhists));nhists++;}
+    if(g_d_DIG_LEDWAV[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_LEDWAV[i].name,nhists));nhists++;}
     if(g_d_DIG_PEDPED[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_PEDPED[i].name,nhists));nhists++;}
     if(g_d_DIG_PEDMAX[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_PEDMAX[i].name,nhists));nhists++;}
+    if(g_d_DIG_PEDWAV[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_PEDWAV[i].name,nhists));nhists++;}
     if(g_d_DIG_SIGPED[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_SIGPED[i].name,nhists));nhists++;}
     if(g_d_DIG_SIGMAX[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_SIGMAX[i].name,nhists));nhists++;}
+    if(g_d_DIG_SIGWAV[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_SIGWAV[i].name,nhists));nhists++;}
   }
   
   cbHist->RemoveAll();
@@ -812,6 +848,7 @@ Bool_t MyMainFrame::HandleTimer(TTimer* timer){
           dic_info_service (service, ONCE_ONLY, 60, addr, sizeof(DIMHIST), 
                             0, 0, &g_d_hist_dummy, sizeof(g_d_hist_dummy));
           if(0==strcmp(g_patt_selected,patt) && 0==strcmp(g_type_selected,type)){
+            //printf("service %s, format %s\n",service,format);
             mh.insert(std::pair<std::string,int>(service,nhists));
             nhists++;
           }
@@ -1125,7 +1162,7 @@ void MyMainFrame::Init(){
   //res=dim_set_dns_node("pclbhcpmt02");
   //res=dim_set_dns_node("pclbcscalib01");
   if(res!=1){
-    printf("Cannot connect to pclbcscalib01!!!\n");
+    printf("Cannot connect to dns node!!!\n");
   }
   
   DoSetPattType(0,0);
