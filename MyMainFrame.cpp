@@ -620,8 +620,10 @@ void MyMainFrame::drawHist()
       ds.Copy(*dsaddr);
       if(g_subtract_ref)ds.Subtract(*dsaddr_ref);
       //dsaddr->fill_TProfile(p0);
-      ds.fill_TH1D(h0);
-      if(0!=strcmp(g_name_selected,g_name_sel_prev)){
+      bool newhist=ds.fill_TH1D(h0);
+      //if(0!=strcmp(g_name_selected,g_name_sel_prev)){
+      //printf("%s: new summary hist %s has %d bins\n",__func__,h0->GetName(), h0->GetXaxis()->GetNbins());
+      if(newhist){
         gPad->SetRightMargin(0.17);
         gPad->SetLeftMargin(0.12);
         gPad->SetBottomMargin(0.12);

@@ -735,8 +735,8 @@ void fill_all(){
               //printf("filling %s, ev %d\n",g_hDIG_SIGWAV[i]->GetName(),g_ievt);
               for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
                 g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
-                g_hDIG_SIGWAV[i]->SetBinContent(0,555);
-                g_hDIG_SIGWAV[i]->SetBinContent(1025,555);
+                //g_hDIG_SIGWAV[i]->SetBinContent(0,555);
+                //g_hDIG_SIGWAV[i]->SetBinContent(1025,555);
               }
             }
           }

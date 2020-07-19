@@ -222,7 +222,7 @@ typedef struct dimSummary{
     strncpy(fmat,h.fmat,sizeof(fmat)-1);
     strncpy(name,h.name,sizeof(name)-1);
     strncpy(title,h.title,sizeof(title)-1);
-    for(int i=0; i<nbins+2; ++i){
+    for(int i=0; i<nbins+2 && i<50; ++i){
       nent[i]=h.nent[i];
       cont[i]=h.cont[i];
       erro[i]=h.erro[i];
@@ -234,7 +234,7 @@ typedef struct dimSummary{
     if(!h.isUsed())return;
     
     nentries-=h.nentries;
-    for(int i=0; i<nbins+2; ++i){
+    for(int i=0; i<nbins+2 && i<50; ++i){
       if(nent[i]>0){
         double s0=nent[i];
         double s1=cont[i]*s0;
@@ -319,14 +319,15 @@ typedef struct dimSummary{
       created=true;
     }
     
-    for(int i=0; i<nbins+2; ++i){
+    for(int i=1; i<nbins+1 && i<50; ++i){
       h->SetBinContent(i,cont[i]);
-      if(i>0 && i<=nbins){
-        h->SetBinError(i,erro[i]);
+      h->SetBinError(i,erro[i]);
+      if(s[i]){
         size_t ls=strlen(s[i]);
         if(ls>0) h->GetXaxis()->SetBinLabel(i,s[i]);
       }
     }
+    
     h->SetEntries(nentries);
     return created;
   }
