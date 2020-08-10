@@ -474,18 +474,9 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
       }
       else if(3==g_rp.datatype[i]){ // DIG
         int JCH=g_rp.datachan[i];
-        if(g_rp.datachan[i]==20){
-          JCH=8;// tr0 digitized by chip 0
-          printf("tr0 digitized by chip 0 is connected to ch 8\n");
-        }
-        else if(g_rp.datachan[i]==21){
-          JCH=17;// tr0 digitized by chip 1
-          printf("tr0 digitized by chip 1 is connected to ch 17\n");
-        }
-        else if(g_rp.datachan[i]>7){
-          JCH+=1; // accounts for tr0 which is inserted as #8
-          printf("input %2d is connected to ch %d\n",g_rp.datachan[i],JCH);
-        }
+        if(g_rp.datachan[i]>=32 && g_rp.datachan[i]<=35)  JCH=(g_rp.datachan[i]-32)*9+8;
+        else if(g_rp.datachan[i]<32) JCH+=g_rp.datachan[i]/8;
+        
         g_used742[JCH]=1;
         sprintf(nam,"%s_nd%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
         sprintf(fmt,"%s/I",nam);
@@ -608,6 +599,11 @@ void closeROOTfile(){
 }
 
 double getped_742(int n, float* d){
+  if(!d){
+    printf("%s: channel is not present!\n",__func__);
+    return 0;
+  }
+  
   int nfirst=n;
   if(nfirst>100)nfirst=100;
   if(nfirst<=0)return 0;
@@ -618,6 +614,11 @@ double getped_742(int n, float* d){
 }
 
 double getmax_742(int n, float* d){
+  if(!d){
+    printf("%s: channel is not present!\n",__func__);
+    return 0;
+  }
+  
   int nfirst=25;
   if(n<=nfirst)return 0;
   
@@ -627,6 +628,11 @@ double getmax_742(int n, float* d){
 }
 
 double getmin_742(int n, float* d){
+  if(!d){
+    printf("%s: channel is not present!\n",__func__);
+    return 0;
+  }
+  
   int nfirst=25;
   if(n<=nfirst)return 0;
   
@@ -674,11 +680,10 @@ void fill_all(){
       }
     }
     
-    for(int JCH=0; JCH<NDT5742CHAN; ++JCH){ // loop over DIG data, channels 0-17
-      int i=JCH;                            // i is the channel # as in runparams
-      if(8==JCH)i=20;
-      else if(17==JCH)i=21;
-      else if(JCH>=9 && JCH<=16)i=JCH-1;
+    for(int JCH=0; JCH<NDT5742CHAN; ++JCH){ // loop over DIG data, channels 0-NDT5742CHSN
+      int i=JCH;                      // i is the channel # as in runparams (and X742 frontface)
+      if(8==JCH%9)i=32+JCH/9;         // JCH is the channel # as in X742 data
+      else i=JCH-JCH/9;
       int ich=g_rp.findch("DIG",i);         // entry number in runparams
       const char *nam=0;
       int ibin=0, pol=0;
@@ -688,17 +693,26 @@ void fill_all(){
         ibin=findbin(g_hsumm_DIG_PED, nam); // assuming all DIG summary histograms have same bin titles.
       }
       if(g_used742[JCH]){
+        if(!g_evdata742[JCH]){
+          printf("%s WARNING chan %d(in %d) is not present in data, disabling it !!!\n",__func__,JCH,i);
+          g_used742[JCH]=0;
+          continue;
+        }
         // determine ped from the first 25 samples
-        double dped=getped_742(25,g_evdata742[JCH]);
+        //double dped=getped_742(25,g_evdata742[JCH]);
+        double dped=getped_742(25,&g_aDT5742[JCH][0]);
+        //
         // determine max and min from all samples except 10 last ones 
         // (for our DT5742, the last 10 samples are 10-20 ADC counts too high)
         double damp=0,dmin=0,dmax=0;
         if(777==pol){// positive polarity
-          dmax=getmax_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          //dmax=getmax_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          dmax=getmax_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
           damp=dmax-dped;
         }
         else{  // negative polarity
-          dmin=getmin_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          //dmin=getmin_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          dmin=getmin_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
           damp=dped-dmin;
         }
         if(g_rp.PEDpatt==g_pattern){
@@ -706,22 +720,23 @@ void fill_all(){
           if(g_hDIG_PEDMAX[i])g_hDIG_PEDMAX[i]->Fill(damp);
           if(g_hDIG_PEDWAV[i]) {
             if( g_hDIG_PEDWAV[i]->GetEntries() <=0 ){
-              //printf("filling %s, ev %d\n",g_hDIG_PEDWAV[i]->GetName(),g_ievt);
               for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
-                g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
+                //g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
+                g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
               }
             }
           }
-          g_hsumm_DIG_PED->Fill(ibin-0.5,damp);
+          if(0==g_rp.digsumm) g_hsumm_DIG_PED->Fill(ibin-0.5,damp);
+          else g_hsumm_DIG_PED->Fill(ibin-0.5,dped);
         }
         else if(g_rp.LEDpatt==g_pattern){
           if(g_hDIG_LEDPED[i])g_hDIG_LEDPED[i]->Fill(dped);     
           if(g_hDIG_LEDMAX[i])g_hDIG_LEDMAX[i]->Fill(damp);
           if(g_hDIG_LEDWAV[i]) {
             if( g_hDIG_LEDWAV[i]->GetEntries() <=0 ){
-              //printf("filling %s, ev %d\n",g_hDIG_LEDWAV[i]->GetName(),g_ievt);
               for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
-                g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
+                //g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
+                g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
               }
             }
           }
@@ -732,11 +747,9 @@ void fill_all(){
           if(g_hDIG_SIGMAX[i])g_hDIG_SIGMAX[i]->Fill(damp);
           if(g_hDIG_SIGWAV[i]) {
             if( g_hDIG_SIGWAV[i]->GetEntries() <=0 ){
-              //printf("filling %s, ev %d\n",g_hDIG_SIGWAV[i]->GetName(),g_ievt);
               for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
-                g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
-                //g_hDIG_SIGWAV[i]->SetBinContent(0,555);
-                //g_hDIG_SIGWAV[i]->SetBinContent(1025,555);
+                //g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
+                g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
               }
             }
           }

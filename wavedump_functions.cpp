@@ -1,22 +1,3 @@
-/******************************************************************************
- * 
- * CAEN SpA - Front End Division
- * Via Vetraia, 11 - 55049 - Viareggio ITALY
- * +390594388398 - www.caen.it
- *
- ***************************************************************************
- * \note TERMS OF USE:
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation. This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. The user relies on the 
- * software, documentation and results solely at his own risk.
- * -----------------------------------------------------------------------------
- * WDconfig contains the functions for reading the configuration file and 
- * setting the parameters in the WDcfg structure
- ******************************************************************************/
-
 
 #include <CAENDigitizer.h>
 #include "wavedump_functions.h"
@@ -29,39 +10,52 @@ int thr_file[MAX_CH] = { 0 };
  *            
  *   \param   WDcfg:   Pointer to the WaveDumpConfig data structure
  */
-static void SetDefaultConfiguration(WaveDumpConfig_t *WDcfg) {
+void SetDefaultConfiguration(WaveDumpConfig_t *WDcfg) {
   int i, j;
-
-  WDcfg->RecordLength = (1024*16);
-  WDcfg->PostTrigger = 80;
-  WDcfg->NumEvents = 1023;
-  WDcfg->EnableMask = 0xFFFF;
+  
+  WDcfg->LinkType = CAEN_DGTZ_OpticalLink;
+  WDcfg->LinkNum = 0;           // only one V1718 in the computer, #0
+  WDcfg->ConetNode = 1;         // #1 (or maybe #2 if two digitizers) (#0 is the VME crate)
+  WDcfg->BaseAddress = 0;       // irrelevant in case of optical connections
+  
+  WDcfg->MaxGroupNumber = 4;   // for V1742!
+  WDcfg->Nch = 36;             // for V1742!
+  
+  WDcfg->Nbit = 12; 
+  WDcfg->DRS4Frequency = CAEN_DGTZ_DRS4_5GHz; // 5 GHz
+  WDcfg->Ts = 0.2;     // 0.2 ns (corresponds to 5 GHz)
+  
+  WDcfg->RecordLength = 1024;
+  WDcfg->PostTrigger = 5;
+  WDcfg->NumEvents = 1;
+  WDcfg->EnableMask = 0xF;
+  
   WDcfg->GWn = 0;
+  for(i=0; i<MAX_GW; ++i) WDcfg->GWaddr[i]=WDcfg->GWdata[i]=WDcfg->GWmask[i]=0;
+  
   WDcfg->ExtTriggerMode = CAEN_DGTZ_TRGMODE_ACQ_ONLY;
   WDcfg->InterruptNumEvents = 0;
   WDcfg->TestPattern = 0;
   WDcfg->DecimationFactor = 1;
-  WDcfg->DesMode = CAEN_DGTZ_DISABLE;
-  WDcfg->FastTriggerMode = CAEN_DGTZ_TRGMODE_DISABLED; 
-  WDcfg->FastTriggerEnabled = CAEN_DGTZ_DISABLE; 
+  WDcfg->FastTriggerMode = CAEN_DGTZ_TRGMODE_ACQ_ONLY; 
+  WDcfg->FastTriggerEnabled = CAEN_DGTZ_ENABLE; 
   WDcfg->FPIOtype = CAEN_DGTZ_IOLevel_NIM;
-
-  strcpy(WDcfg->GnuPlotPath, GNUPLOT_DEFAULT_PATH);
+  
   for(i=0; i<MAX_SET; i++) {
-    WDcfg->PulsePolarity[i] = CAEN_DGTZ_PulsePolarityPositive;
+    WDcfg->PulsePolarity[i] = CAEN_DGTZ_PulsePolarityNegative;
     WDcfg->Version_used[i] = 0;
-    WDcfg->DCoffset[i] = 0;
+    WDcfg->DCoffset[i] = 58981;
     WDcfg->Threshold[i] = 0;
     WDcfg->ChannelTriggerMode[i] = CAEN_DGTZ_TRGMODE_DISABLED;
     WDcfg->GroupTrgEnableMask[i] = 0;
-    for(j=0; j<MAX_SET; j++) WDcfg->DCoffsetGrpCh[i][j] = -1;
-    WDcfg->FTThreshold[i] = 0;
-    WDcfg->FTDCoffset[i] =0;
+    for(j=0; j<MAX_SET; j++) WDcfg->DCoffsetGrpCh[i][j] = -1; // if not -1, overrides DCoffset !!!???
+    WDcfg->FTThreshold[i] = 20934;
+    WDcfg->FTDCoffset[i] = 32768;
   }
-  WDcfg->useCorrections = -1;
-  WDcfg->UseManualTables = -1;
-  for(i=0; i<MAX_X742_GROUP_SIZE; i++)
-    sprintf(WDcfg->TablesFilenames[i], "Tables_gr%d", i);
+  WDcfg->useCorrections = -1;  // only AUTO correction is implemented, these parameters are meaningless
+  WDcfg->UseManualTables = -1; // manual corrections will be implemented later
+  for(i=0; i<MAX_X742_GROUP_SIZE; i++) sprintf(WDcfg->TablesFilenames[i], "Tables_gr%d", i);
+  
   WDcfg->DRS4Frequency = CAEN_DGTZ_DRS4_5GHz;
   WDcfg->StartupCalibration = 1;
 }
@@ -75,46 +69,45 @@ static void SetDefaultConfiguration(WaveDumpConfig_t *WDcfg) {
  *               decodes the changes which need to perform internal parameters
  *               recalculations.
  */
-int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg) 
-{
+int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg) {
+  if(!f_ini)return -1;
+  
   char str[1000], str1[1000], *pread;
   int i, ch=-1, val, Off=0, tr = -1;
   int ret = 0;
-
+  
   // Save previous values (for compare)
-  int PrevDesMode = WDcfg->DesMode;
   int PrevUseCorrections = WDcfg->useCorrections;
   int PrevUseManualTables = WDcfg->UseManualTables;
   size_t TabBuf[sizeof(WDcfg->TablesFilenames)];
   // Copy the filenames to watch for changes
   memcpy(TabBuf, WDcfg->TablesFilenames, sizeof(WDcfg->TablesFilenames));      
-
+  
   /* Default settings */
   SetDefaultConfiguration(WDcfg);
-
+  
   /* read config file and assign parameters */
   while(!feof(f_ini)) {
     int read;
     char *res;
+    
     // read a word from the file
     read = fscanf(f_ini, "%s", str);
-    if( !read || (read == EOF) || !strlen(str))
-      continue;
+    if( !read || (read == EOF) || !strlen(str))   continue;
     // skip comments
     if(str[0] == '#') {
       res = fgets(str, 1000, f_ini);
       continue;
     }
-
+    
     if (strcmp(str, "@ON")==0) {
       Off = 0;
       continue;
     }
     if (strcmp(str, "@OFF")==0)
       Off = 1;
-    if (Off)
-      continue;
-
+    if (Off)      continue;
+    
     // Section (COMMON or individual channel)
     if (str[0] == '[') {
       if (strstr(str, "COMMON")) {
@@ -133,12 +126,13 @@ int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg)
         if (val < 0 || val >= MAX_SET) {
           printf("%s: Invalid channel number\n", str);
         } else {
+          tr=-1;
           ch = val;
         }
       }
       continue;
     }
- 
+    
     // OPEN: read the details of physical path to the digitizer
     if (strstr(str, "OPEN")!=NULL) {
       read = fscanf(f_ini, "%s", str1);
@@ -251,16 +245,6 @@ int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg)
       continue;
     }
 
-    // Trigger Edge
-    /*if (strstr(str, "TRIGGER_EDGE")!=NULL) {
-      read = fscanf(f_ini, "%s", str1);
-      if (strcmp(str1, "FALLING")==0)
-      WDcfg->TriggerEdge = 1;
-      else if (strcmp(str1, "RISING")!=0)
-      printf("%s: invalid option\n", str);
-      continue;
-      }*/
-
     // External Trigger (DISABLED, ACQUISITION_ONLY, ACQUISITION_AND_TRGOUT)
     if (strstr(str, "EXTERNAL_TRIGGER")!=NULL) {
       read = fscanf(f_ini, "%s", str1);
@@ -274,37 +258,19 @@ int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg)
         printf("%s: Invalid Parameter\n", str);
       continue;
     }
-
+    
     // Max. number of events for a block transfer (0 to 1023)
     if (strstr(str, "MAX_NUM_EVENTS_BLT")!=NULL) {
       read = fscanf(f_ini, "%d", &WDcfg->NumEvents);
       continue;
     }
-
-    // GNUplot path
-    if (strstr(str, "GNUPLOT_PATH")!=NULL) {
-      read = fscanf(f_ini, "%s", WDcfg->GnuPlotPath);
-      continue;
-    }
-
+    
     // Post Trigger (percent of the acquisition window)
     if (strstr(str, "POST_TRIGGER")!=NULL) {
       read = fscanf(f_ini, "%d", &WDcfg->PostTrigger);
       continue;
     }
-
-    // DesMode (Double sampling frequency for the Mod 731 and 751)
-    if (strstr(str, "ENABLE_DES_MODE")!=NULL) {
-      read = fscanf(f_ini, "%s", str1);
-      if (strcmp(str1, "YES")==0)
-        WDcfg->DesMode = CAEN_DGTZ_ENABLE;
-      else if (strcmp(str1, "NO")!=0)
-        printf("%s: invalid option\n", str);
-      if(PrevDesMode != WDcfg->DesMode)
-        ret |= (0x1 << CFGRELOAD_DESMODE_BIT);
-      continue;
-    }
-
+    
     // Interrupt settings (request interrupt when there are at least N events to read; 0=disable interrupts (polling mode))
     if (strstr(str, "USE_INTERRUPT")!=NULL) {
       read = fscanf(f_ini, "%d", &WDcfg->InterruptNumEvents);
@@ -339,13 +305,12 @@ int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg)
         pp = CAEN_DGTZ_PulsePolarityNegative;
       else
         printf("%s: Invalid Parameter\n", str);
-			
+      
       if (ch == -1)
         for (i = 0; i<MAX_SET; i++)
           WDcfg->PulsePolarity[i] = pp;
       else			
         WDcfg->PulsePolarity[ch] = pp;
-				
 			
       continue;
     }
@@ -355,13 +320,12 @@ int ParseConfigFile(FILE *f_ini, WaveDumpConfig_t *WDcfg)
       int dc;
       read = fscanf(f_ini, "%d", &dc);
       if (tr != -1) {
-        // 				WDcfg->FTDCoffset[tr] = dc;
         WDcfg->FTDCoffset[tr * 2] = (uint32_t)dc;
         WDcfg->FTDCoffset[tr * 2 + 1] = (uint32_t)dc;
         continue;
       }
       
-      val = (int)((dc + 50) * 65535 / 100);
+      val = (int)((float)(dc + 50) * 65535 / 100);
       if (ch == -1)
         for (i = 0; i < MAX_SET; i++){
           WDcfg->DCoffset[i] = val;
@@ -556,8 +520,20 @@ int GetMoreBoardInfo(int handle, CAEN_DGTZ_BoardInfo_t BoardInfo, WaveDumpConfig
   else if (CAEN_DGTZ_DRS4_5GHz==freq) WDcfg->Ts = (float)0.2;
   else if (CAEN_DGTZ_DRS4_750MHz==freq) WDcfg->Ts = (float)(1.0/750.0)*1000.0;
   
-  WDcfg->MaxGroupNumber = 2;
-  WDcfg->Nch = 16;
+  switch(BoardInfo.FormFactor) {
+  case CAEN_DGTZ_VME64_FORM_FACTOR:
+  case CAEN_DGTZ_VME64X_FORM_FACTOR:
+    WDcfg->MaxGroupNumber = 4;
+    WDcfg->Nch = 36;
+    break;
+  case CAEN_DGTZ_DESKTOP_FORM_FACTOR:
+  case CAEN_DGTZ_NIM_FORM_FACTOR:
+  default:
+    WDcfg->MaxGroupNumber = 2;
+    WDcfg->Nch = 18;
+    break;
+  }
+  printf("%s DIGITIZER: MaxGroupNumber=%d, Nch=%d\n",__func__,WDcfg->MaxGroupNumber,WDcfg->Nch);
   
   return 0;
 }
@@ -624,12 +600,15 @@ int ProgramDigitizer(int handle, WaveDumpConfig_t WDcfg, CAEN_DGTZ_BoardInfo_t B
   for(i=0; i<(WDcfg.Nch/8); i++) {
     if (WDcfg.EnableMask & (1<<i)) {
       for(j=0; j<8; j++) {
-        if (WDcfg.DCoffsetGrpCh[i][j] != -1)
+        if (WDcfg.DCoffsetGrpCh[i][j] != -1){
           ret |= CAEN_DGTZ_SetChannelDCOffset(handle,(i*8)+j, WDcfg.DCoffsetGrpCh[i][j]);
-        else
-          ret |= CAEN_DGTZ_SetChannelDCOffset(handle, (i * 8) + j, WDcfg.DCoffset[i]);
+        }
+        else{
+          //ret |= CAEN_DGTZ_SetChannelDCOffset(handle,(i*8)+j, WDcfg.DCoffset[i]);
+          ret |= CAEN_DGTZ_SetChannelDCOffset(handle,(i*8)+j, WDcfg.DCoffset[(i*8)+j]);
+        }
       }
-      ret |= CAEN_DGTZ_SetTriggerPolarity(handle, i, (CAEN_DGTZ_TriggerPolarity_t)WDcfg.PulsePolarity[i]); //.TriggerEdge
+      ret |= CAEN_DGTZ_SetTriggerPolarity(handle, i, (CAEN_DGTZ_TriggerPolarity_t)WDcfg.PulsePolarity[i]); 
     }
   }
   for(i=0; i<(WDcfg.Nch/8); i++) {

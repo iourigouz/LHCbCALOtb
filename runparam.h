@@ -8,7 +8,7 @@
 #define NADCCHAN 24
 #define NTDCCHAN 32
 #define NTDCMAXHITS 10
-#define NDT5742CHAN 32
+#define NDT5742CHAN 36
 #define NDT5742SAMPL 2048
 
 #define MAXCHANS 100
@@ -61,6 +61,7 @@ class runParam {
   // negative (default): A=ped-min
   // positive: A=max-ped
   int polarity[MAXCHANS];  // 777-positive, otherwise negative
+  int digsumm;             // 0 -> MAX, otherwise PED
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;

@@ -94,6 +94,7 @@ void runParam::reset(){
   ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
   VME_ADC1 = VME_ADC2 = VME_ADC3 = 0;
   digitizer_used=false;
+  digsumm=1; // values of dped in the PED DIG summary histo
   
   cx1[0]=-7046.; cx1[1]=140.; cx1[2]=7329.;
   cy1[0]=-7119.; cy1[1]= 30.; cy1[2]=7157.;
@@ -338,6 +339,9 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"PEDPERIOD")){
         if(nit>1 && nit1>0)PEDperiod=n;
       }
+      else if(0==strcmp(what,"DIGSUMM")){
+        if(nit>1 && nit1>0)digsumm=n;
+      }
       else if(0==strcmp(what,"DWC1XPAR")){
         if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}
       }
@@ -400,7 +404,8 @@ void runParam::read(const char* fnam){
       else printf("%s WARNING: %s bad TDC channel number %d\n",__func__,&chnam[ich][0],datachan[ich]);
     }
     else if(3==datatype[ich]){// 4) digitizer
-      if( (datachan[ich]>=0 && datachan[ich]<16) || 20==datachan[ich] || 21==datachan[ich])digitizer_used=true;
+      //if( (datachan[ich]>=0 && datachan[ich]<16) || 20==datachan[ich] || 21==datachan[ich])digitizer_used=true;
+      if( (datachan[ich]>=0 && datachan[ich]<36) ) digitizer_used=true;
       else printf("%s WARNING: %s bad digitizer channel number %d\n",__func__,&chnam[ich][0],datachan[ich]);
     }
   }

@@ -3,7 +3,7 @@
 #define NADCCHAN 24
 #define NTDCCHAN 32
 #define NTDCMAXHITS 10
-#define NDT5742CHAN 32
+#define NDT5742CHAN 36
 #define NDT5742SAMPL 2048
 
 #define MAXCHANS 100

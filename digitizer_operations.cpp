@@ -52,16 +52,18 @@ int digitizer_init(char* config_name){
   
   FILE* f_ini = fopen(ConfigFileName, "r");
   if (!f_ini) {
-    printf("%s: %s not found, trying default\n",__func__,ConfigFileName);
+    printf("%s: %s not found, trying DT5742_default.param\n",__func__,ConfigFileName);
     f_ini = fopen("DT5742_default.param", "r");
     if (!f_ini) {
-      printf("%s: DT5742_default.param not found, exiting, crash expected\n",__func__);
-      goto Close;
+      printf("%s: DT5742_default.param not found, applying internal default\n",__func__);
+      SetDefaultConfiguration(&WDcfg);
     }
     else printf("%s: using DT5742_default.param\n",__func__);
   }
-  ParseConfigFile(f_ini, &WDcfg);
-  fclose(f_ini);
+  if(f_ini){
+    ParseConfigFile(f_ini, &WDcfg);
+    fclose(f_ini);
+  }
   
   ret = CAEN_DGTZ_OpenDigitizer((CAEN_DGTZ_ConnectionType)WDcfg.LinkType, WDcfg.LinkNum, WDcfg.ConetNode, WDcfg.BaseAddress, &DHandle);
   if(ret!=CAEN_DGTZ_Success){
@@ -99,6 +101,20 @@ int digitizer_init(char* config_name){
     goto Close;
   }
   
+  // if using DT5742, check that the number of channels is within correct range
+  if(2==WDcfg.MaxGroupNumber){ // for DT5742 valid channels are 0..15, 32 and 33
+    bool range_ok=true;
+    for(int i=0; i<g_rp.nchans; ++i){
+      if(3==g_rp.datatype[i]){ // DIG channels
+        if(g_rp.datachan[i]>15 && g_rp.datachan[i]!=32 && g_rp.datachan[i]!=33)
+          printf("%s WARNING: using DT5742 ==> %s has channel number out of range %d\n",
+                 __func__,&g_rp.chnam[i][0],g_rp.datachan[i]);
+        range_ok=false;
+      }
+    }
+    if(!range_ok)printf("%s: crash expected, please edit config and restart\n",__func__);
+  }
+  
   WDcfg.EnableMask &= (1<<(WDcfg.Nch/8))-1;
   
   ret = ProgramDigitizer(DHandle, WDcfg, BoardInfo);
@@ -120,8 +136,8 @@ int digitizer_init(char* config_name){
     goto Close;
   }
 
-  // Reload Correction Tables if changed
-  WDcfg.useCorrections = -1;  // Use AUTO Corrections anyway!!!
+  // correction tables. Always use AUTO Corrections from DRS4 flash memory !!!
+  WDcfg.useCorrections = -1;  // manual corrections will be implemented later
   ret = CAEN_DGTZ_LoadDRS4CorrectionData(DHandle, WDcfg.DRS4Frequency);
   if(ret!=CAEN_DGTZ_Success){
     printf("%s WARNING: LoadDRS4CorrectionData returns %d\n",__func__,ret);
@@ -132,7 +148,7 @@ int digitizer_init(char* config_name){
     printf("%s WARNING: EnableDRS4Correction returns %d\n",__func__,ret);
     goto Close;
   }
-      
+  
   // allocate event buffer
   if(!Event742){
     ret = CAEN_DGTZ_AllocateEvent(DHandle, (void**)&Event742);
@@ -299,5 +315,7 @@ int digitizer_read(){
       }
     }
   }
+  
+  return CAEN_DGTZ_Success;
 }
 
