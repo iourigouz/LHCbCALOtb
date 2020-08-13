@@ -143,7 +143,7 @@ int start_run(const char* task){
   }
   
   char digitizer_param[128];
-  sprintf(digitizer_param,"DT5742_%s.param",task);
+  sprintf(digitizer_param,"X742_%s.param",task);
   if(0!=digitizer_init(digitizer_param)){
     printf("cannot configure digitizer, stop\n");
     return 7;
@@ -176,6 +176,11 @@ int start_run(const char* task){
   printf(" ... done\n");
   
   dimsrv_createhistsvc();
+  
+  if(0!=digitizer_adjust_pedestals(g_rp.dig_adjust_offsets)){
+    printf("%s: error in digitizer_adjust_pedestals\n",__func__); 
+    //    return 12;
+  }
   
   g_ievt=0, g_nped=0, g_nled=0, g_nsig=0;
   
@@ -274,7 +279,7 @@ int main(int argc, char *argv[]){
   
   printf("Usage: ./tb <task name> \n");
   printf("Usage:      run config file is <task name>.param\n");
-  printf("Usage:      digitizer config file is DT5742_<task name>.param\n");
+  printf("Usage:      digitizer config file is X742_<task name>.param\n");
   
   int resdim=dimsrv_init();
   if (0!=resdim){

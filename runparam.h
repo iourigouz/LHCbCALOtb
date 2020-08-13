@@ -61,7 +61,8 @@ class runParam {
   // negative (default): A=ped-min
   // positive: A=max-ped
   int polarity[MAXCHANS];  // 777-positive, otherwise negative
-  int digsumm;             // 0 -> MAX, otherwise PED
+  int dig_PED_summ;             // 0 -> MAX, otherwise PED
+  int dig_adjust_offsets;    // requests dig pedestal adjust at start of run (0->NO, !=0->YES)
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;

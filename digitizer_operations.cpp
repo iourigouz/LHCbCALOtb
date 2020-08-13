@@ -48,17 +48,17 @@ int digitizer_init(char* config_name){
   //strcpy(ConfigFileName, "/etc/wavedump/WaveDumpConfig_X742.txt");
   char ConfigFileName[256];
   if(config_name)sprintf(ConfigFileName,"%s",config_name);
-  else sprintf(ConfigFileName,"DT5742_default.param");
+  else sprintf(ConfigFileName,"X742_default.param");
   
   FILE* f_ini = fopen(ConfigFileName, "r");
   if (!f_ini) {
-    printf("%s: %s not found, trying DT5742_default.param\n",__func__,ConfigFileName);
-    f_ini = fopen("DT5742_default.param", "r");
+    printf("%s: %s not found, trying X742_default.param\n",__func__,ConfigFileName);
+    f_ini = fopen("X742_default.param", "r");
     if (!f_ini) {
-      printf("%s: DT5742_default.param not found, applying internal default\n",__func__);
+      printf("%s: X742_default.param not found, applying internal default\n",__func__);
       SetDefaultConfiguration(&WDcfg);
     }
-    else printf("%s: using DT5742_default.param\n",__func__);
+    else printf("%s: using X742_default.param\n",__func__);
   }
   if(f_ini){
     ParseConfigFile(f_ini, &WDcfg);
@@ -101,18 +101,41 @@ int digitizer_init(char* config_name){
     goto Close;
   }
   
+  // defining the channel offsets according to the requested polarity
+  for(int i=0; i<g_rp.nchans; ++i){
+    if(3==g_rp.datatype[i]){ // DIG channels
+      int ich=g_rp.datachan[i];
+      if(ich<32){// not trigger)
+        int pol=g_rp.polarity[i];
+        if(777==pol)      {
+          WDcfg.desiredPED[ich]=500;
+          WDcfg.DCoffset[ich]=48000; // positive polarity
+        }
+        else if(222==pol) {
+          WDcfg.desiredPED[ich]=2000;
+          WDcfg.DCoffset[ich]=37000; // bipolar signal
+        }
+        else              {
+          WDcfg.desiredPED[ich]=3500;
+          WDcfg.DCoffset[ich]=26000; // negative polarity
+        }
+      }
+    }
+  }
+  
   // if using DT5742, check that the number of channels is within correct range
   if(2==WDcfg.MaxGroupNumber){ // for DT5742 valid channels are 0..15, 32 and 33
     bool range_ok=true;
     for(int i=0; i<g_rp.nchans; ++i){
       if(3==g_rp.datatype[i]){ // DIG channels
-        if(g_rp.datachan[i]>15 && g_rp.datachan[i]!=32 && g_rp.datachan[i]!=33)
+        if(g_rp.datachan[i]>15 && g_rp.datachan[i]!=32 && g_rp.datachan[i]!=33){
           printf("%s WARNING: using DT5742 ==> %s has channel number out of range %d\n",
                  __func__,&g_rp.chnam[i][0],g_rp.datachan[i]);
-        range_ok=false;
+          range_ok=false;
+        }
       }
     }
-    if(!range_ok)printf("%s: crash expected, please edit config and restart\n",__func__);
+    if(!range_ok)printf("%s: crash expected! Edit your config and restart!\n",__func__);
   }
   
   WDcfg.EnableMask &= (1<<(WDcfg.Nch/8))-1;
@@ -319,3 +342,74 @@ int digitizer_read(){
   return CAEN_DGTZ_Success;
 }
 
+int digitizer_adjust_pedestals(double precision){
+  if(precision<=0)return CAEN_DGTZ_Success;
+  
+  int ret=CAEN_DGTZ_Success;
+  int iiter=0;
+  for(iiter=0; iiter<1000; ++iiter){
+    // start acquisition
+    if(0!=(ret=digitizer_start())){
+      printf("%s: error %d in digitizer_start\n",__func__,ret); 
+      return ret; 
+    }
+    usleep(10000);
+  
+    // send SW trigger
+    if(CAEN_DGTZ_Success!=(ret=CAEN_DGTZ_SendSWtrigger (DHandle))){
+      printf("%s: error in CAEN_DGTZ_SendSWtrigger\n",__func__);
+      return ret;
+    }
+    
+    if(CAEN_DGTZ_Success!=(ret=digitizer_read())){
+      printf("%s: error in digitizer_read\n",__func__);
+      return ret;
+    }
+    
+    if(0!=(ret=digitizer_stop())){
+      printf("%s: error %d in digitizer_stop\n",__func__,ret);
+      return ret;
+    }
+    usleep(10000);
+    
+    bool need_update=false;
+    for(int JCH=0; JCH<(WDcfg.MaxGroupNumber)*MAX_X742_CHANNEL_SIZE; ++JCH){
+      double ped=0;
+      int i=JCH2i(JCH);
+      if(i<32){// not a trigger
+        if(g_used742[JCH]){
+          for(int j=0; j<g_nDT5742[JCH];++j){          ped+=(double)g_aDT5742[JCH][j]/g_nDT5742[JCH];        }
+          // correction
+          double dp=ped-WDcfg.desiredPED[i];
+          if(abs(dp)>precision){// need update
+            need_update=true;
+            WDcfg.DCoffset[i]+=(int)(dp/0.1365);
+            printf("%s: ped(%2.2d)=%10.2f, desired %10.2f\n",__func__,JCH2i(JCH),ped,WDcfg.desiredPED[i]);
+          }
+        }
+      }
+    }
+    
+    if(!need_update){
+      printf("%s: SUCCESS converged after %d iterations\n",__func__,iiter);
+      usleep(10000);
+      return CAEN_DGTZ_Success;
+    }
+    
+    for(int JCH=0; JCH<(WDcfg.MaxGroupNumber)*MAX_X742_CHANNEL_SIZE; ++JCH){
+      int i=JCH2i(JCH);
+      if(i<32){// not a trigger
+        if(g_used742[JCH]){
+          ret = CAEN_DGTZ_SetChannelDCOffset(DHandle,i, WDcfg.DCoffset[i]);
+          if(CAEN_DGTZ_Success!=ret){
+            printf("%s: error in CAEN_DGTZ_SetChannelDCOffset\n",__func__);
+            return ret;
+          }
+        }
+      }
+    }
+  }
+  
+  printf("%s: WARNING NOT CONVERGED after %d iterations!!!\n",__func__,iiter);
+  return -1;
+}

@@ -44,7 +44,8 @@ void SetDefaultConfiguration(WaveDumpConfig_t *WDcfg) {
   for(i=0; i<MAX_SET; i++) {
     WDcfg->PulsePolarity[i] = CAEN_DGTZ_PulsePolarityNegative;
     WDcfg->Version_used[i] = 0;
-    WDcfg->DCoffset[i] = 58981;
+    WDcfg->desiredPED[i]=3500;  // for negative polarity!!!
+    WDcfg->DCoffset[i] = 26000; // for negative polarity!!!
     WDcfg->Threshold[i] = 0;
     WDcfg->ChannelTriggerMode[i] = CAEN_DGTZ_TRGMODE_DISABLED;
     WDcfg->GroupTrgEnableMask[i] = 0;
@@ -572,6 +573,8 @@ int ProgramDigitizer(int handle, WaveDumpConfig_t WDcfg, CAEN_DGTZ_BoardInfo_t B
 
   // Set the waveform test bit for debugging
   if (WDcfg.TestPattern) ret |= CAEN_DGTZ_WriteRegister(handle, CAEN_DGTZ_BROAD_CH_CONFIGBIT_SET_ADD, 1<<3);
+  // enable software trigger for acquisition only
+  ret |= CAEN_DGTZ_SetSWTriggerMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
   
   ret |= CAEN_DGTZ_SetFastTriggerDigitizing(handle,WDcfg.FastTriggerEnabled);
   ret |= CAEN_DGTZ_SetFastTriggerMode(handle,WDcfg.FastTriggerMode);

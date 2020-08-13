@@ -94,7 +94,8 @@ void runParam::reset(){
   ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
   VME_ADC1 = VME_ADC2 = VME_ADC3 = 0;
   digitizer_used=false;
-  digsumm=1; // values of dped in the PED DIG summary histo
+  dig_adjust_offsets=0;
+  dig_PED_summ=1; // values of dped in the PED DIG summary histo
   
   cx1[0]=-7046.; cx1[1]=140.; cx1[2]=7329.;
   cy1[0]=-7119.; cy1[1]= 30.; cy1[2]=7157.;
@@ -147,6 +148,10 @@ void runParam::setChanDataConn(char* nam, char* typ, int ich){
   if('P'==nam[sl-2] && 'Z'==nam[sl-1]){
     if(3==ityp)printf(" INFO %s: positive polarity requested for DIG %2.2d %s\n",__func__,ich,nam);
     pol=777;
+  }
+  if('B'==nam[sl-2] && 'P'==nam[sl-1]){
+    if(3==ityp)printf(" INFO %s: bipolar signal requested for DIG %2.2d %s\n",__func__,ich,nam);
+    pol=222;
   }
 
   int inamexist=-1, ichanexist=-1;
@@ -339,8 +344,11 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"PEDPERIOD")){
         if(nit>1 && nit1>0)PEDperiod=n;
       }
-      else if(0==strcmp(what,"DIGSUMM")){
-        if(nit>1 && nit1>0)digsumm=n;
+      else if(0==strcmp(what,"DIG_PED_SUMM")){
+        if(nit>1 && nit1>0)dig_PED_summ=n;
+      }
+      else if(0==strcmp(what,"DIG_ADJUST_OFFSETS")){
+        if(nit>1 && nit1>0)dig_adjust_offsets=n;
       }
       else if(0==strcmp(what,"DWC1XPAR")){
         if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}

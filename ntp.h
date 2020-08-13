@@ -71,3 +71,8 @@ const char* dimsrv_getcommand();
 void create_dimservstatus();
 void delete_dimservstatus();
 void update_dimservstatus();
+
+int i2JCH(int i);
+
+int JCH2i(int JCH);
+

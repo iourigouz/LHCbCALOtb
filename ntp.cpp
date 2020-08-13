@@ -171,6 +171,22 @@ static int g_dwc4right=-1;
 static int g_dwc4up   =-1;
 static int g_dwc4down =-1;
 
+int i2JCH(int i){
+  int JCH=0;
+  if(i>=32&&i<=35)JCH=(i-32)*9+8;
+  else if(i>=0&&i<=31)JCH=i+i/8;
+  return JCH;
+};
+
+int JCH2i(int JCH){
+  int i=0;
+  if(JCH>=0&&JCH<=35){
+    if(8==JCH%9)i=32+JCH/9;
+    else i=JCH-JCH/9;
+  }
+  return i;
+};
+
 void openROOTfile(const char* filenam, const RUNPARAM* rp){
   delete_histos();
   
@@ -710,6 +726,12 @@ void fill_all(){
           dmax=getmax_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
           damp=dmax-dped;
         }
+        else if(222==pol){// bipolar signal
+          //dmax=getmax_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
+          dmax=getmax_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
+          dmin=getmin_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
+          damp=dmax-dmin;
+        }
         else{  // negative polarity
           //dmin=getmin_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
           dmin=getmin_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
@@ -726,7 +748,7 @@ void fill_all(){
               }
             }
           }
-          if(0==g_rp.digsumm) g_hsumm_DIG_PED->Fill(ibin-0.5,damp);
+          if(0==g_rp.dig_PED_summ) g_hsumm_DIG_PED->Fill(ibin-0.5,damp);
           else g_hsumm_DIG_PED->Fill(ibin-0.5,dped);
         }
         else if(g_rp.LEDpatt==g_pattern){

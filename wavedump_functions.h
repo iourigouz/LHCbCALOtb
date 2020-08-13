@@ -49,6 +49,7 @@ typedef struct {
   CAEN_DGTZ_TriggerMode_t ChannelTriggerMode[MAX_SET];         //+
   CAEN_DGTZ_PulsePolarity_t PulsePolarity[MAX_SET];            //+
   uint32_t DCoffset[MAX_SET];                                  //+
+  float desiredPED[MAX_SET];                                   //+ new:(
   int32_t  DCoffsetGrpCh[MAX_SET][MAX_SET];                    //??????????????????????
   uint32_t Threshold[MAX_SET];                                 //+
   int Version_used[MAX_SET];                                   //+

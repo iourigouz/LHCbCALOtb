@@ -371,6 +371,10 @@ DC_OFFSET 25
 # +2V signal on TR
 # 	DC_OFFSET 43520 
 # 	TRIGGER_THRESHOLD 26214
+#
+# experimentally, for NIM signal: 
+#     - with offset=32767 it triggers OK with thresholds from 14934 to 25934
+#     - with offset=27767 it triggers OK with thresholds from 21934 to 32934
 
 [TR0]
 DC_OFFSET              32768

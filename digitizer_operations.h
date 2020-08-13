@@ -17,4 +17,4 @@ int digitizer_start();
 
 int digitizer_stop();
 
-int digitizer_writeregister(uint32_t address, uint32_t data, uint32_t mask);
+int digitizer_adjust_pedestals(double precision);
