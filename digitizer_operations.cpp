@@ -384,7 +384,8 @@ int digitizer_adjust_pedestals(double precision){
           if(abs(dp)>precision){// need update
             need_update=true;
             WDcfg.DCoffset[i]+=(int)(dp/0.1365);
-            printf("%s: ped(%2.2d)=%10.2f, desired %10.2f\n",__func__,JCH2i(JCH),ped,WDcfg.desiredPED[i]);
+            printf("%s: ped(%2.2d)=%10.2f, goal %10.2f, new Offset %6d\n",
+                   __func__,  JCH2i(JCH),ped,WDcfg.desiredPED[i],WDcfg.DCoffset[i]);
           }
         }
       }
