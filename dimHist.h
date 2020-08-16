@@ -77,6 +77,7 @@ typedef struct dimHist{
       h->SetBinContent(i,cont[i]);
     }
     h->SetEntries(nentries);
+    h->SetTitle(title);
     return created;
   }
 } DIMHIST;

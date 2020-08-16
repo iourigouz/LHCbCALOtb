@@ -171,6 +171,17 @@ static int g_dwc4right=-1;
 static int g_dwc4up   =-1;
 static int g_dwc4down =-1;
 
+void title_set_iev(TH1* h, int iev){
+  if(!h)return;
+  
+  char tit[1024];
+  strcpy(tit,h->GetTitle());
+  char* pev=strstr(tit, " ev#");
+  if(!pev)pev=tit+strlen(tit);
+  sprintf(pev," ev# %d",iev);
+  h->SetTitle(tit);
+}
+
 int i2JCH(int i){
   int JCH=0;
   if(i>=32&&i<=35)JCH=(i-32)*9+8;
@@ -737,15 +748,15 @@ void fill_all(){
           dmin=getmin_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
           damp=dped-dmin;
         }
+        char tit[1024];
         if(g_rp.PEDpatt==g_pattern){
           if(g_hDIG_PEDPED[i])g_hDIG_PEDPED[i]->Fill(dped);
           if(g_hDIG_PEDMAX[i])g_hDIG_PEDMAX[i]->Fill(damp);
           if(g_hDIG_PEDWAV[i]) {
-            if( g_hDIG_PEDWAV[i]->GetEntries() <=0 ){
-              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
-                //g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
-                g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
-              }
+            if( g_hDIG_PEDWAV[i]->GetEntries() <=1 ){
+              g_hDIG_PEDWAV[i]->Reset();
+              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j) g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
+              title_set_iev(g_hDIG_PEDWAV[i], g_ievt);
             }
           }
           if(0==g_rp.dig_PED_summ) g_hsumm_DIG_PED->Fill(ibin-0.5,damp);
@@ -755,11 +766,10 @@ void fill_all(){
           if(g_hDIG_LEDPED[i])g_hDIG_LEDPED[i]->Fill(dped);     
           if(g_hDIG_LEDMAX[i])g_hDIG_LEDMAX[i]->Fill(damp);
           if(g_hDIG_LEDWAV[i]) {
-            if( g_hDIG_LEDWAV[i]->GetEntries() <=0 ){
-              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
-                //g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
-                g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
-              }
+            if( g_hDIG_LEDWAV[i]->GetEntries() <=1 ){
+              g_hDIG_LEDWAV[i]->Reset();
+              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j) g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
+              title_set_iev(g_hDIG_LEDWAV[i], g_ievt);
             }
           }
           g_hsumm_DIG_LED->Fill(ibin-0.5,damp);
@@ -768,11 +778,10 @@ void fill_all(){
           if(g_hDIG_SIGPED[i])g_hDIG_SIGPED[i]->Fill(dped);     
           if(g_hDIG_SIGMAX[i])g_hDIG_SIGMAX[i]->Fill(damp);
           if(g_hDIG_SIGWAV[i]) {
-            if( g_hDIG_SIGWAV[i]->GetEntries() <=0 ){
-              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j){
-                //g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_evdata742[JCH][j]);
-                g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
-              }
+            if( g_hDIG_SIGWAV[i]->GetEntries() <=1 ){
+              g_hDIG_SIGWAV[i]->Reset();
+              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j) g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
+              title_set_iev(g_hDIG_SIGWAV[i], g_ievt);
             }
           }
           g_hsumm_DIG_SIG->Fill(ibin-0.5,damp);
@@ -1227,13 +1236,25 @@ void update_dimHists(){
   for(int i=0; i<NDT5742CHAN; ++i){
     if(g_d_DIG_LEDPED[i]) fill_dimHist(g_d_DIG_LEDPED[i],g_hDIG_LEDPED[i]);
     if(g_d_DIG_LEDMAX[i]) fill_dimHist(g_d_DIG_LEDMAX[i],g_hDIG_LEDMAX[i]);
-    if(g_d_DIG_LEDWAV[i]){fill_dimHist(g_d_DIG_LEDWAV[i],g_hDIG_LEDWAV[i]); g_hDIG_LEDWAV[i]->Reset();}
+    if(g_d_DIG_LEDWAV[i]){
+      fill_dimHist(g_d_DIG_LEDWAV[i],g_hDIG_LEDWAV[i]); 
+      //g_hDIG_LEDWAV[i]->Reset();
+      g_hDIG_LEDWAV[i]->SetEntries(1);
+    }
     if(g_d_DIG_PEDPED[i]) fill_dimHist(g_d_DIG_PEDPED[i],g_hDIG_PEDPED[i]);
     if(g_d_DIG_PEDMAX[i]) fill_dimHist(g_d_DIG_PEDMAX[i],g_hDIG_PEDMAX[i]);
-    if(g_d_DIG_PEDWAV[i]){fill_dimHist(g_d_DIG_PEDWAV[i],g_hDIG_PEDWAV[i]); g_hDIG_PEDWAV[i]->Reset();}
+    if(g_d_DIG_PEDWAV[i]){
+      fill_dimHist(g_d_DIG_PEDWAV[i],g_hDIG_PEDWAV[i]); 
+      //g_hDIG_PEDWAV[i]->Reset();
+      g_hDIG_PEDWAV[i]->SetEntries(1);
+    }
     if(g_d_DIG_SIGPED[i]) fill_dimHist(g_d_DIG_SIGPED[i],g_hDIG_SIGPED[i]);
     if(g_d_DIG_SIGMAX[i]) fill_dimHist(g_d_DIG_SIGMAX[i],g_hDIG_SIGMAX[i]);
-    if(g_d_DIG_SIGWAV[i]){fill_dimHist(g_d_DIG_SIGWAV[i],g_hDIG_SIGWAV[i]); g_hDIG_SIGWAV[i]->Reset();}
+    if(g_d_DIG_SIGWAV[i]){
+      fill_dimHist(g_d_DIG_SIGWAV[i],g_hDIG_SIGWAV[i]); 
+      //g_hDIG_SIGWAV[i]->Reset();
+      g_hDIG_SIGWAV[i]->SetEntries(1);
+    }
   }
   
   if(g_d_summ_DIG_PED) g_d_summ_DIG_PED->fill_dimSummary(g_hsumm_DIG_PED);
