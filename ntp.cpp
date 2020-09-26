@@ -59,6 +59,8 @@ int g_nDT5742[NDT5742CHAN];
 float* g_evdata742[NDT5742CHAN]; // intermediate destination for data pointers
 int g_used742[NDT5742CHAN];          // flag =1 for used channels, 0 otherwise
 float g_aDT5742[NDT5742CHAN][NDT5742SAMPL];
+int g_startCell[NDT5742CHAN];
+int g_trigTag[NDT5742CHAN];
 
 RUNPARAM g_rp;
 // end data
@@ -201,7 +203,7 @@ int JCH2i(int JCH){
 void openROOTfile(const char* filenam, const RUNPARAM* rp){
   delete_histos();
   
-  char nam[128],tit[128],fmt[128], nam1[128];
+  char nam[128],tit[128],fmt[128], nam1[128], nam2[128], nam3[128];
   if(!g_ROOTfile && !g_ROOTtree){
     strncpy(memdir, gDirectory->GetPath(), 240);
     g_ROOTfile=new TFile(filenam,"recreate");
@@ -511,6 +513,12 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         sprintf(nam1,"%s_ad%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
         sprintf(fmt,"%s[%s]/F",nam1,nam);
         g_ROOTtree->Branch(nam1,&g_aDT5742[JCH][0],fmt);
+        sprintf(nam,"%s_stcell%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+        sprintf(fmt,"%s/I",nam);
+        g_ROOTtree->Branch(nam,&g_startCell[JCH],fmt);
+        sprintf(nam,"%s_trgtag%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+        sprintf(fmt,"%s/I",nam);
+        g_ROOTtree->Branch(nam,&g_trigTag[JCH],fmt);
       }
     }
     if(g_dwc1left>=0 && g_dwc1right>=0)  g_ROOTtree->Branch("x1",&g_x1,"x1/D");

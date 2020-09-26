@@ -330,6 +330,8 @@ int digitizer_read(){
         int JCH=igr*MAX_X742_CHANNEL_SIZE+ich;
         g_nDT5742[JCH]=(Event742->DataGroup[igr]).ChSize[ich];
         g_evdata742[JCH]=(Event742->DataGroup[igr]).DataChannel[ich];
+        g_startCell[JCH]=(Event742->DataGroup[igr]).StartIndexCell;
+        g_trigTag[JCH]=(Event742->DataGroup[igr]).TriggerTimeTag;
         if(g_used742[JCH]){
           for(int i=0; i<g_nDT5742[JCH];++i){
             g_aDT5742[JCH][i]=(g_evdata742[JCH])[i];

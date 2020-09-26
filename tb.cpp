@@ -184,8 +184,8 @@ int start_run(const char* task){
   
   g_ievt=0, g_nped=0, g_nled=0, g_nsig=0;
   
-  if(0!=vme_start()){ printf("%s: error in vme_start\n",__func__); return 10; }
   if(0!=digitizer_start()){printf("%s: error in digitizer_start\n",__func__); return 11; }
+  if(0!=vme_start()){ printf("%s: error in vme_start\n",__func__); return 10; }
   
   g_running=true;
   return 0;
