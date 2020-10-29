@@ -601,44 +601,44 @@ int CORBO_init(int base){
     }
   }
   
-  if(cvSuccess!=(ret=CORBO_write_CSR(base, VME_CRB_CH, 0xEC)) ){ // enable main channel, test input
-    printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,VME_CRB_CH);
+  if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch, 0xEC)) ){ // enable main channel, test input
+    printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,g_rp.vme_crb_ch);
     return -101;
   }
-  if(cvSuccess!=(ret=CORBO_setbusy(base, VME_CRB_CH)) ){ // set it busy
-    printf("%s: error %d in CORBO_setbusy, ch %d\n", __func__,ret,VME_CRB_CH);
+  if(cvSuccess!=(ret=CORBO_setbusy(base, g_rp.vme_crb_ch)) ){ // set it busy
+    printf("%s: error %d in CORBO_setbusy, ch %d\n", __func__,ret,g_rp.vme_crb_ch);
     return -102;
   }
-  if(cvSuccess!=(ret=CORBO_write_CSR(base, VME_CRB_CH, 0x00)) ){ // enable main channel for work
-    printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0x00\n", __func__,ret,VME_CRB_CH);
+  if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch, 0x00)) ){ // enable main channel for work
+    printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0x00\n", __func__,ret,g_rp.vme_crb_ch);
     return -103;
   }
   uint16_t csr=0;
-  if(cvSuccess!=(ret=CORBO_read_CSR(base, VME_CRB_CH, csr)) ){ // check CSR
-    printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,VME_CRB_CH);
+  if(cvSuccess!=(ret=CORBO_read_CSR(base, g_rp.vme_crb_ch, csr)) ){ // check CSR
+    printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,g_rp.vme_crb_ch);
     return -104;
   }
   if(0x00!=(csr&0xFF)){
-    printf("WARNING: bad csrL = 0x%x for work, CORBO ch %d\n", (csr&0xFF), VME_CRB_CH);
+    printf("WARNING: bad csrL = 0x%x for work, CORBO ch %d\n", (csr&0xFF), g_rp.vme_crb_ch);
     return -105;
   }
   
-  if(VME_CRB_CH2!=VME_CRB_CH){// the channel for pulse generation
-    if(cvSuccess!=(ret=CORBO_write_CSR(base, VME_CRB_CH2, 0xEC)) ){ // enable second channel, test input
-      printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,VME_CRB_CH2);
+  if(g_rp.vme_crb_ch2!=g_rp.vme_crb_ch){// the channel for pulse generation
+    if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch2, 0xEC)) ){ // enable second channel, test input
+      printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,g_rp.vme_crb_ch2);
       return -101;
     }
-    if(cvSuccess!=(ret=CORBO_setbusy(base, VME_CRB_CH2)) ){ // set it busy
-      printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,VME_CRB_CH2);
+    if(cvSuccess!=(ret=CORBO_setbusy(base, g_rp.vme_crb_ch2)) ){ // set it busy
+      printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,g_rp.vme_crb_ch2);
       return -102;
     }
     uint16_t csr2=0;
-    if(cvSuccess!=(ret=CORBO_read_CSR(base, VME_CRB_CH2, csr2)) ){ // check CSR
-      printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,VME_CRB_CH2);
+    if(cvSuccess!=(ret=CORBO_read_CSR(base, g_rp.vme_crb_ch2, csr2)) ){ // check CSR
+      printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,g_rp.vme_crb_ch2);
       return -104;
     }
     if(0xEC!=(csr2&0xFF)){
-      printf("WARNING: bad csrL = 0x%x for pulser, CORBO ch %d\n", (csr2&0xFF), VME_CRB_CH2);
+      printf("WARNING: bad csrL = 0x%x for pulser, CORBO ch %d\n", (csr2&0xFF), g_rp.vme_crb_ch2);
       return -105;
     }
   }
@@ -782,9 +782,9 @@ int ADC_read_data(const uint32_t base, int& evcnt, uint16_t* data){
   
   char iadc[8];
   
-  if(VME_ADC1==base)strcpy(iadc,"ADC1");
-  else if(VME_ADC2==base)strcpy(iadc,"ADC2");
-  else if(VME_ADC3==base)strcpy(iadc,"ADC3");
+  if(g_rp.vme_adc1==base)strcpy(iadc,"ADC1");
+  else if(g_rp.vme_adc2==base)strcpy(iadc,"ADC2");
+  else if(g_rp.vme_adc3==base)strcpy(iadc,"ADC3");
   
   short fifo;
   res=CAENVME_GetFIFOMode(BHandle, &fifo);
@@ -851,9 +851,9 @@ int ADC_read_data1(const uint32_t base, int& evcnt, uint16_t* data){
   int res;
   
   char iadc[8];
-  if(VME_ADC1==base)strcpy(iadc,"ADC1");
-  else if(VME_ADC2==base)strcpy(iadc,"ADC2");
-  else if(VME_ADC3==base)strcpy(iadc,"ADC3");
+  if(g_rp.vme_adc1==base)strcpy(iadc,"ADC1");
+  else if(g_rp.vme_adc2==base)strcpy(iadc,"ADC2");
+  else if(g_rp.vme_adc3==base)strcpy(iadc,"ADC3");
   
   uint16_t csr;
   int csrcnt;
@@ -892,16 +892,17 @@ int ADC_read_data1(const uint32_t base, int& evcnt, uint16_t* data){
 int vme_init(int pulse_len){
   CVBoardTypes  VMEBoard=cvV2718;
   short         Link=0;
-  short         Device=0;
+  //short         Device=0;
+  short         Device=g_rp.vme_conetnode;
   int res;
   
   g_ADC1_installed=true;
   g_ADC2_installed=true;
   g_ADC3_installed=true;
   
-  if(VME_ADC1<=0)g_ADC1_installed=false;
-  if(VME_ADC2<=0)g_ADC2_installed=false;
-  if(VME_ADC3<=0)g_ADC3_installed=false;
+  if(g_rp.vme_adc1<=0)g_ADC1_installed=false;
+  if(g_rp.vme_adc2<=0)g_ADC2_installed=false;
+  if(g_rp.vme_adc3<=0)g_ADC3_installed=false;
   
   if(!g_vme_initialized){
     res=CAENVME_Init(VMEBoard, Link, Device, &BHandle);
@@ -931,11 +932,11 @@ int vme_init(int pulse_len){
   res=CAENVME_SetPulserConf(BHandle, cvPulserB, 20, pulse_len, cvUnit25ns, 1, cvManualSW, cvManualSW);
   if(cvSuccess!=res){printf("%s: Error in CAENVME_SetPulserConf\n", __func__);return res;}
   
-  //res=V259_clear(VME_V259);
+  //res=V259_clear(g_rp.vme_v259);
   //if(cvSuccess!=res){printf("%s: Error clear V259\n", __func__);return res;}
   
   if(g_ADC1_installed && g_rp.ADC1_used){
-    res=ADC_clear(VME_ADC1);
+    res=ADC_clear(g_rp.vme_adc1);
     if(cvSuccess!=res){
       printf("%s: Error clear ADC1: probably not installed\n", __func__);
       g_ADC1_installed=false;
@@ -943,7 +944,7 @@ int vme_init(int pulse_len){
   }
   
   if(g_ADC2_installed && g_rp.ADC2_used){
-    res=ADC_clear(VME_ADC2);
+    res=ADC_clear(g_rp.vme_adc2);
     if(cvSuccess!=res){
       printf("%s: Error clear ADC2: probably not installed\n", __func__);
       g_ADC2_installed=false;
@@ -951,7 +952,7 @@ int vme_init(int pulse_len){
   }
   
   if(g_ADC3_installed && g_rp.ADC3_used){
-    res=ADC_clear(VME_ADC3);
+    res=ADC_clear(g_rp.vme_adc3);
     if(cvSuccess!=res){
       printf("%s: Error clear ADC3: probably not installed\n", __func__);
       g_ADC3_installed=false;
@@ -959,14 +960,14 @@ int vme_init(int pulse_len){
   }
   
   if(g_TDC_installed && g_rp.TDC_used){
-    res=V1290_init(VME_V1290);
+    res=V1290_init(g_rp.vme_v1290);
     if(cvSuccess!=res){
       printf("%s: Error init TDC: probably not installed\n", __func__);
       g_TDC_installed=false;
     }
   }
   
-  res=CORBO_init(VME_CORBO);
+  res=CORBO_init(g_rp.vme_corbo);
   if(cvSuccess!=res){printf("%s: Error init CORBO\n", __func__);return res;}
   
   gettimeofday(&last_LED_time,NULL); // initialize last PED, LED, SIG time
@@ -1003,13 +1004,13 @@ int vme_read_pattern(){
   int res=cvSuccess;
   uint16_t pat;
   
-  res=V259_read(VME_V259,pat);
+  res=V259_read(g_rp.vme_v259,pat);
   if(cvSuccess!=res){
     printf("%s: error in V259_read\n",__func__);
     return res;
   }
   
-  res=V259_clear(VME_V259);
+  res=V259_clear(g_rp.vme_v259);
   if(cvSuccess!=res){
     printf("%s: error in V259_clear\n",__func__);
     return res;
@@ -1023,12 +1024,12 @@ int vme_readTDC(){
   if(g_TDC_installed && g_rp.TDC_used){
     int ndata=0;
     uint32_t data[2048];
-    int res=V1290_read_buffer(VME_V1290, 1024, ndata, data);
+    int res=V1290_read_buffer(g_rp.vme_v1290, 1024, ndata, data);
     if(cvSuccess!=res){
       V1290_print_buffer(ndata,data);
       ndata=0;
       g_nTDCclear++;
-      //CORBO_clear(VME_CORBO,VME_CRB_CH);
+      //CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch);
       memset(g_nTDC,0,sizeof(g_nTDC));
       memset(g_tTDC,0,sizeof(g_tTDC));
       g_tTDCtrig=0;
@@ -1046,7 +1047,7 @@ int vme_readADC(){
   int res=0;
   
   if(g_ADC1_installed && g_rp.ADC1_used){
-    res=ADC_read_data(VME_ADC1, evcnt, data);
+    res=ADC_read_data(g_rp.vme_adc1, evcnt, data);
     if(0!=res){
       printf("%s: error reading ADC1\n",__func__);
       return -1;
@@ -1060,7 +1061,7 @@ int vme_readADC(){
   }
   
   if(g_ADC2_installed && g_rp.ADC2_used){
-    res=ADC_read_data(VME_ADC2, evcnt, data);
+    res=ADC_read_data(g_rp.vme_adc2, evcnt, data);
     if(0!=res){
       g_ADC2_installed=false;
       return 0;
@@ -1074,8 +1075,8 @@ int vme_readADC(){
   }
 
   if(g_ADC3_installed && g_rp.ADC3_used){
-    res=ADC_read_data(VME_ADC3, evcnt, data);
-    //res=ADC_read_data1(VME_ADC3, evcnt, data);
+    res=ADC_read_data(g_rp.vme_adc3, evcnt, data);
+    //res=ADC_read_data1(g_rp.vme_adc3, evcnt, data);
     if(0!=res){
       g_ADC3_installed=false;
       return 0;
@@ -1120,85 +1121,85 @@ CVIRQLevels cvirq(uint32_t irq){
 int vme_start(){
   int c_res=0;
   
-  if( cvSuccess!=(c_res=CORBO_set_IRQ(VME_CORBO,VME_CRB_CH,0, 0x00, 0x00)) ){
-    printf("%s: CORBO disable event IRQ ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_set_IRQ(g_rp.vme_corbo,g_rp.vme_crb_ch,0, 0x00, 0x00)) ){
+    printf("%s: CORBO disable event IRQ ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   usleep(100000);
   
-  if( cvSuccess!=(c_res=CORBO_setbusy(VME_CORBO,VME_CRB_CH)) ){
-    printf("%s: CORBO set busy ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch)) ){
+    printf("%s: CORBO set busy ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   usleep(100000);
   
   if(g_ADC1_installed && g_rp.ADC1_used){
-    if( cvSuccess!=(c_res=ADC_clear(VME_ADC1)) ){
+    if( cvSuccess!=(c_res=ADC_clear(g_rp.vme_adc1)) ){
       printf("%s: clear ADC1 returns %d\n",__func__,c_res);
       return c_res;
     }
   }
   
   if(g_ADC2_installed && g_rp.ADC2_used){
-    if( cvSuccess!=(c_res=ADC_clear(VME_ADC2)) ){
+    if( cvSuccess!=(c_res=ADC_clear(g_rp.vme_adc2)) ){
       printf("%s: clear ADC2 returns %d\n",__func__,c_res);
       return c_res;
     }
   }
   
   if(g_ADC3_installed && g_rp.ADC3_used){
-    if( cvSuccess!=(c_res=ADC_clear(VME_ADC3)) ){
+    if( cvSuccess!=(c_res=ADC_clear(g_rp.vme_adc3)) ){
       printf("%s: clear ADC3 returns %d\n",__func__,c_res);
       return c_res;
     }
   }
   
-  //if( cvSuccess!=(c_res=V259_clear(VME_V259)) ){
+  //if( cvSuccess!=(c_res=V259_clear(g_rp.vme_v259)) ){
   //  printf("%s: clear V259 returns %d\n",__func__,c_res);
   //  return c_res;
   //}
   
-  if( cvSuccess!=(c_res=V1290_clear(VME_V1290)) ){
+  if( cvSuccess!=(c_res=V1290_clear(g_rp.vme_v1290)) ){
     printf("%s: clear TDC returns %d\n",__func__,c_res);
     return c_res;
   }
   
-  if( cvSuccess!=(c_res=V1290_count_reset(VME_V1290)) ){
+  if( cvSuccess!=(c_res=V1290_count_reset(g_rp.vme_v1290)) ){
     printf("%s: count reset TDC returns %d\n",__func__,c_res);
     return c_res;
   }
   
-  //    if( cvSuccess!=(c_res=V260_clear_scalers(VME_V260)) ){
+  //    if( cvSuccess!=(c_res=V260_clear_scalers(g_rp.vme_v260)) ){
   //            printf("clear scalers V260: returns %d\n",c_res);
   //    }
   
-  //CVIRQLevels mask_enable=cvirq(VME_CRB_IRQ);
-  //if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, cvirq(VME_CRB_IRQ)))){; // level 3
+  //CVIRQLevels mask_enable=cvirq(g_rp.vme_crb_irq);
+  //if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, cvirq(g_rp.vme_crb_irq)))){; // level 3
   if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, 0xFFFFFFFF))){; // all levels
     printf("%s: Cannot enable VME IRQ\n",__func__);
     return c_res;
   }
 
-  if( cvSuccess!=(c_res=CORBO_set_IRQ(VME_CORBO,VME_CRB_CH,0, VME_CRB_IRQ, VME_CRB_VEC)) ){ // level 3, vector 0x85
-    printf("%s: CORBO enable event IRQ ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_set_IRQ(g_rp.vme_corbo,g_rp.vme_crb_ch,0, g_rp.vme_crb_irq, g_rp.vme_crb_vec)) ){ // level 3, vector 0x85
+    printf("%s: CORBO enable event IRQ ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   
   uint16_t cr=0, vr=0;
-  if( cvSuccess!=(c_res=CORBO_get_IRQ(VME_CORBO,VME_CRB_CH,0, cr, vr)) ){
-    printf("%s: CORBO enable event IRQ ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_get_IRQ(g_rp.vme_corbo,g_rp.vme_crb_ch,0, cr, vr)) ){
+    printf("%s: CORBO enable event IRQ ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   else printf("%s: CORBO IRQ written/read back: cr 0x%X / 0x%X; vr 0x%X / 0x%X\n",
-              __func__, VME_CRB_IRQ, cr, VME_CRB_VEC, vr);
+              __func__, g_rp.vme_crb_irq, cr, g_rp.vme_crb_vec, vr);
   
-  if( cvSuccess!=(c_res=CORBO_clear(VME_CORBO,VME_CRB_CH)) ){// clear CORBO main channel
-    printf("%s: CORBO clear ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch)) ){// clear CORBO main channel
+    printf("%s: CORBO clear ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   
-  if( cvSuccess!=(c_res=CORBO_clear(VME_CORBO,VME_CRB_CH2)) ){// clear CORBO secondary channel
-    printf("%s: CORBO clear ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch2)) ){// clear CORBO secondary channel
+    printf("%s: CORBO clear ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   
@@ -1208,32 +1209,32 @@ int vme_start(){
 int vme_stop(){
   int c_res=0;
 
-  if( cvSuccess!=(c_res=CORBO_set_IRQ(VME_CORBO,VME_CRB_CH,0, 0x00, 0x00)) ){
-    printf("%s: CORBO disable event IRQ ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_set_IRQ(g_rp.vme_corbo,g_rp.vme_crb_ch,0, 0x00, 0x00)) ){
+    printf("%s: CORBO disable event IRQ ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   usleep(100000);
 
-  if( cvSuccess!=(c_res=CORBO_setbusy(VME_CORBO,VME_CRB_CH)) ){
-    printf("%s: CORBO_set busy ch %d returns %d\n",__func__,VME_CRB_CH,c_res);
+  if( cvSuccess!=(c_res=CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch)) ){
+    printf("%s: CORBO_set busy ch %d returns %d\n",__func__,g_rp.vme_crb_ch,c_res);
     return c_res;
   }
   usleep(100000);
   
-  if( cvSuccess!=(c_res=ADC_clear(VME_ADC1)) ){
+  if( cvSuccess!=(c_res=ADC_clear(g_rp.vme_adc1)) ){
     printf("%s: clear ADC1 returns %d\n",__func__,c_res);
     return c_res;
   }
   
   if(g_ADC2_installed){
-    if( cvSuccess!=(c_res=ADC_clear(VME_ADC2)) ){
+    if( cvSuccess!=(c_res=ADC_clear(g_rp.vme_adc2)) ){
       printf("%s: clear ADC2 returns %d\n",__func__,c_res);
       return c_res;
     }
   }
   
   if(g_ADC3_installed){
-    if( cvSuccess!=(c_res=ADC_clear(VME_ADC3)) ){
+    if( cvSuccess!=(c_res=ADC_clear(g_rp.vme_adc3)) ){
       printf("%s: clear ADC3 returns %d\n",__func__,c_res);
       return c_res;
     }
@@ -1272,7 +1273,7 @@ int vme_wait(uint32_t timeout){
     }
     
     int dtled=diftimeval(last_LED_time, check_time);
-    if(g_rp.LEDperiod>0.001){
+    if(g_rp.LEDperiod>0.0001){
       if(dtled>(int)1000000.*g_rp.LEDperiod){
         if(0==sigledpedcode){
           if(0!=vme_setCORBO_2()) printf("%s ev%6d: WARNING error vme_setCORBO_2\n",__func__,g_ievt);
@@ -1301,11 +1302,11 @@ int vme_wait(uint32_t timeout){
   
   uint32_t vec=0;
   if( VME_WAIT_SIG == ( VME_WAIT_SIG & sigledpedcode ) ){
-    if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(VME_CRB_IRQ), &vec, cvD32))){; // level 3
+    if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(g_rp.vme_crb_irq), &vec, cvD32))){; // level 3
       printf("%s Cannot acknowledge IRQ, returns %d\n",__func__,ret);
       return VME_WAIT_BADACK;
     }
-    else if(VME_CRB_VEC!=(vec&0xFF)){
+    else if(g_rp.vme_crb_vec!=(vec&0xFF)){
       printf("%s WARNING wrong interrupt vector %d\n",__func__,vec);
       return VME_WAIT_BADVECT;
     }
@@ -1328,7 +1329,7 @@ int vme_getirq(int& level, int& vector){//
   }
   
   if(msk1){
-    if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(VME_CRB_IRQ), &vec, cvD32))){; // level 3
+    if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(g_rp.vme_crb_irq), &vec, cvD32))){; // level 3
       printf("%s Cannot acknowledge IRQ, returns %d\n",__func__,ret);
       return VME_WAIT_BADACK;
     }
@@ -1342,14 +1343,14 @@ int vme_getirq(int& level, int& vector){//
 int vme_wait0(uint32_t timeout){
   int ret=0;
 
-  ret=CAENVME_IRQWait(BHandle, cvirq(VME_CRB_IRQ), timeout);
+  ret=CAENVME_IRQWait(BHandle, cvirq(g_rp.vme_crb_irq), timeout);
   
   uint32_t vec=0;
-  if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(VME_CRB_IRQ), &vec, cvD32))){; // level 3
+  if(cvSuccess!=(ret=CAENVME_IACKCycle(BHandle, cvirq(g_rp.vme_crb_irq), &vec, cvD32))){; // level 3
     printf("%s Cannot acknowledge IRQ\n",__func__);
     return ret;
   }
-  else if(VME_CRB_VEC!=(vec&0xFF)){
+  else if(g_rp.vme_crb_vec!=(vec&0xFF)){
     printf("%s WARNING wrong interrupt vector %d\n",__func__,vec);
     return 112;
   }
@@ -1357,17 +1358,17 @@ int vme_wait0(uint32_t timeout){
 }
 
 int vme_clearCORBO(){
-    CORBO_clear(VME_CORBO,VME_CRB_CH);
+    CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch);
 }
 
 int vme_setCORBO(){
-    CORBO_setbusy(VME_CORBO,VME_CRB_CH);
+    CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch);
 }
 
 int vme_clearCORBO_2(){
-    CORBO_clear(VME_CORBO,VME_CRB_CH2);
+    CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch2);
 }
 
 int vme_setCORBO_2(){
-    CORBO_setbusy(VME_CORBO,VME_CRB_CH2);
+    CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch2);
 }

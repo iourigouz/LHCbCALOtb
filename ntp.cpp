@@ -298,7 +298,7 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         nh1i++;
         sprintf(nam,"%s_LED_DIG_%2.2d_WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
         sprintf(tit,"%s (DIG%2.2d) LED WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
-        g_hDIG_LEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,1024);
+        g_hDIG_LEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,204.8);
         nh1i++;
         g_hsumm_DIG_LED->GetXaxis()->SetBinLabel(iDIG+1,&g_rp.chnam[ich][0]);
         iDIG++;
@@ -383,7 +383,7 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         nh1i++;
         sprintf(nam,"%s_PED_DIG_%2.2d_WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
         sprintf(tit,"%s (DIG%2.2d) PED WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
-        g_hDIG_PEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,1024);
+        g_hDIG_PEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,204.8);
         nh1i++;
         g_hsumm_DIG_PED->GetXaxis()->SetBinLabel(iDIG+1,&g_rp.chnam[ich][0]);
         iDIG++;
@@ -419,7 +419,7 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         nh1i++;
         sprintf(nam,"%s_SIG_DIG_%2.2d_WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
         sprintf(tit,"%s (DIG%2.2d) SIG WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
-        g_hDIG_SIGWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,1024);
+        g_hDIG_SIGWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,204.8);
         nh1i++;
         g_hsumm_DIG_SIG->GetXaxis()->SetBinLabel(iDIG+1,&g_rp.chnam[ich][0]);
         iDIG++;
@@ -478,57 +478,57 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     //gDirectory->pwd();
     
     printf("\n   %s INFO: %d TH1I histograms created\n",__func__,nh1i);
-
-    g_ROOTtree=new TTree("DATA", "DATA");
     
-    g_ROOTtree->Branch("t",&g_t, "t/D");
-    g_ROOTtree->Branch("pattern",&g_pattern, "pattern/I");
-    g_ROOTtree->Branch("tTDCtrig",&g_tTDCtrig, "tTDCtrig/I");
+    if(g_rp.write_data){
+      g_ROOTtree=new TTree("DATA", "DATA");
+      
+      g_ROOTtree->Branch("t",&g_t, "t/D");
+      g_ROOTtree->Branch("pattern",&g_pattern, "pattern/I");
+      g_ROOTtree->Branch("tTDCtrig",&g_tTDCtrig, "tTDCtrig/I");
   
-    memset(g_used742,0,sizeof(g_used742));
-    
-    for(int i=0 ; i<g_rp.nchans; ++i){
-      if(1==g_rp.datatype[i]){ // ADC
-        sprintf(nam,"%s_A%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s/I",nam);
-        g_ROOTtree->Branch(nam,&g_ADC[g_rp.datachan[i]],fmt);
-      }
-      else if(2==g_rp.datatype[i]){ // TDC
-        sprintf(nam,"%s_nt%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s/I",nam);
-        g_ROOTtree->Branch(nam,&g_nTDC[g_rp.datachan[i]],fmt);
-        sprintf(nam1,"%s_tt%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s[%s]/I",nam1,nam);
-        g_ROOTtree->Branch(nam1,&g_tTDC[g_rp.datachan[i]][0],fmt);
-      }
-      else if(3==g_rp.datatype[i]){ // DIG
-        int JCH=g_rp.datachan[i];
-        if(g_rp.datachan[i]>=32 && g_rp.datachan[i]<=35)  JCH=(g_rp.datachan[i]-32)*9+8;
-        else if(g_rp.datachan[i]<32) JCH+=g_rp.datachan[i]/8;
+      for(int i=0 ; i<g_rp.nchans; ++i){
+        if(1==g_rp.datatype[i]){ // ADC
+          sprintf(nam,"%s_A%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s/I",nam);
+          g_ROOTtree->Branch(nam,&g_ADC[g_rp.datachan[i]],fmt);
+        }
+        else if(2==g_rp.datatype[i]){ // TDC
+          sprintf(nam,"%s_nt%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s/I",nam);
+          g_ROOTtree->Branch(nam,&g_nTDC[g_rp.datachan[i]],fmt);
+          sprintf(nam1,"%s_tt%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s[%s]/I",nam1,nam);
+          g_ROOTtree->Branch(nam1,&g_tTDC[g_rp.datachan[i]][0],fmt);
+        }
+        else if(3==g_rp.datatype[i]){ // DIG
+          int JCH=g_rp.datachan[i];
+          if(g_rp.datachan[i]>=32 && g_rp.datachan[i]<=35)  JCH=(g_rp.datachan[i]-32)*9+8;
+          else if(g_rp.datachan[i]<32) JCH+=g_rp.datachan[i]/8;
         
-        g_used742[JCH]=1;
-        sprintf(nam,"%s_nd%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s/I",nam);
-        g_ROOTtree->Branch(nam,&g_nDT5742[JCH],fmt);
-        sprintf(nam1,"%s_ad%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s[%s]/F",nam1,nam);
-        g_ROOTtree->Branch(nam1,&g_aDT5742[JCH][0],fmt);
-        sprintf(nam,"%s_stcell%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s/I",nam);
-        g_ROOTtree->Branch(nam,&g_startCell[JCH],fmt);
-        sprintf(nam,"%s_trgtag%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-        sprintf(fmt,"%s/I",nam);
-        g_ROOTtree->Branch(nam,&g_trigTag[JCH],fmt);
+          sprintf(nam,"%s_nd%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s/I",nam);
+          g_ROOTtree->Branch(nam,&g_nDT5742[JCH],fmt);
+          sprintf(nam1,"%s_ad%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s[%s]/F",nam1,nam);
+          g_ROOTtree->Branch(nam1,&g_aDT5742[JCH][0],fmt);
+          sprintf(nam,"%s_stcell%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s/I",nam);
+          g_ROOTtree->Branch(nam,&g_startCell[JCH],fmt);
+          sprintf(nam,"%s_trgtag%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
+          sprintf(fmt,"%s/I",nam);
+          g_ROOTtree->Branch(nam,&g_trigTag[JCH],fmt);
+        }
       }
+      if(g_dwc1left>=0 && g_dwc1right>=0)  g_ROOTtree->Branch("x1",&g_x1,"x1/D");
+      if(g_dwc1up>=0 && g_dwc1down>=0)     g_ROOTtree->Branch("y1",&g_y1,"y1/D");
+      if(g_dwc2left>=0 && g_dwc2right>=0)  g_ROOTtree->Branch("x2",&g_x2,"x2/D");
+      if(g_dwc2up>=0 && g_dwc2down>=0)     g_ROOTtree->Branch("y2",&g_y2,"y2/D");
+      if(g_dwc3left>=0 && g_dwc3right>=0)  g_ROOTtree->Branch("x3",&g_x3,"x3/D");
+      if(g_dwc3up>=0 && g_dwc3down>=0)     g_ROOTtree->Branch("y3",&g_y3,"y3/D");
+      if(g_dwc4left>=0 && g_dwc4right>=0)  g_ROOTtree->Branch("x4",&g_x4,"x4/D");
+      if(g_dwc4up>=0 && g_dwc4down>=0)     g_ROOTtree->Branch("y4",&g_y4,"y4/D");
     }
-    if(g_dwc1left>=0 && g_dwc1right>=0)  g_ROOTtree->Branch("x1",&g_x1,"x1/D");
-    if(g_dwc1up>=0 && g_dwc1down>=0)     g_ROOTtree->Branch("y1",&g_y1,"y1/D");
-    if(g_dwc2left>=0 && g_dwc2right>=0)  g_ROOTtree->Branch("x2",&g_x2,"x2/D");
-    if(g_dwc2up>=0 && g_dwc2down>=0)     g_ROOTtree->Branch("y2",&g_y2,"y2/D");
-    if(g_dwc3left>=0 && g_dwc3right>=0)  g_ROOTtree->Branch("x3",&g_x3,"x3/D");
-    if(g_dwc3up>=0 && g_dwc3down>=0)     g_ROOTtree->Branch("y3",&g_y3,"y3/D");
-    if(g_dwc4left>=0 && g_dwc4right>=0)  g_ROOTtree->Branch("x4",&g_x4,"x4/D");
-    if(g_dwc4up>=0 && g_dwc4down>=0)     g_ROOTtree->Branch("y4",&g_y4,"y4/D");
+    printf("%s: DATA tree created\n",__func__);
   }
 }
 
@@ -686,7 +686,8 @@ int findbin(TH1* h, const char* t){ // returns bin number, 1...N+1, as in the TA
 }
 
 void fill_all(){
-  if(g_ROOTfile && g_ROOTtree){
+  //if(g_ROOTfile && g_ROOTtree){
+  if(g_ROOTfile){
     TTimeStamp ttst;
     g_tprev=g_t;  // save the previous event time
     g_t=ttst.AsDouble()-g_t0;
@@ -727,10 +728,10 @@ void fill_all(){
         pol=g_rp.polarity[ich];
         ibin=findbin(g_hsumm_DIG_PED, nam); // assuming all DIG summary histograms have same bin titles.
       }
-      if(g_used742[JCH]){
+      if(g_rp.used742[JCH]){
         if(!g_evdata742[JCH]){
           printf("%s WARNING chan %d(in %d) is not present in data, disabling it !!!\n",__func__,JCH,i);
-          g_used742[JCH]=0;
+          g_rp.used742[JCH]=0;
           continue;
         }
         // determine ped from the first 25 samples
@@ -945,7 +946,7 @@ void fill_all(){
       }
     }
     
-    g_ROOTtree->Fill();
+    if(g_ROOTtree)g_ROOTtree->Fill();
   }
 }
 

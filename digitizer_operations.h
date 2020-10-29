@@ -7,6 +7,8 @@ int digitizer_init(char* config_name);
 
 int digitizer_close();
 
+int digitizer_SWtrg();
+
 int digitizer_read();
 
 int digitizer_reset();

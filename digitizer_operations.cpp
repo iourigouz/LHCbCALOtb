@@ -65,7 +65,8 @@ int digitizer_init(char* config_name){
     fclose(f_ini);
   }
   
-  ret = CAEN_DGTZ_OpenDigitizer((CAEN_DGTZ_ConnectionType)WDcfg.LinkType, WDcfg.LinkNum, WDcfg.ConetNode, WDcfg.BaseAddress, &DHandle);
+  //ret = CAEN_DGTZ_OpenDigitizer((CAEN_DGTZ_ConnectionType)WDcfg.LinkType, WDcfg.LinkNum, WDcfg.ConetNode, WDcfg.BaseAddress, &DHandle);
+  ret = CAEN_DGTZ_OpenDigitizer((CAEN_DGTZ_ConnectionType)WDcfg.LinkType, WDcfg.LinkNum, g_rp.dig_conetnode, WDcfg.BaseAddress, &DHandle);
   if(ret!=CAEN_DGTZ_Success){
     printf("%s: error in OpenDigitizer\n",__func__);
     return ret;
@@ -270,6 +271,18 @@ int digitizer_stop(){
   return ret;
 }
 
+int digitizer_SWtrg(){
+  if(!g_rp.digitizer_used) return 0;
+  
+  CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
+  // send SW trigger
+  if(CAEN_DGTZ_Success!=(ret=CAEN_DGTZ_SendSWtrigger (DHandle))){
+    printf("%s: error %d in CAEN_DGTZ_SendSWtrigger\n",__func__,ret);
+  }
+  
+  return ret;
+}
+
 int digitizer_read(){
   if(!g_rp.digitizer_used) return 0;
   
@@ -332,7 +345,7 @@ int digitizer_read(){
         g_evdata742[JCH]=(Event742->DataGroup[igr]).DataChannel[ich];
         g_startCell[JCH]=(Event742->DataGroup[igr]).StartIndexCell;
         g_trigTag[JCH]=(Event742->DataGroup[igr]).TriggerTimeTag;
-        if(g_used742[JCH]){
+        if(g_rp.used742[JCH]){
           for(int i=0; i<g_nDT5742[JCH];++i){
             g_aDT5742[JCH][i]=(g_evdata742[JCH])[i];
           }
@@ -356,12 +369,14 @@ int digitizer_adjust_pedestals(double precision){
       return ret; 
     }
     usleep(10000);
-  
+    
     // send SW trigger
     if(CAEN_DGTZ_Success!=(ret=CAEN_DGTZ_SendSWtrigger (DHandle))){
       printf("%s: error in CAEN_DGTZ_SendSWtrigger\n",__func__);
       return ret;
     }
+    
+    usleep(100);
     
     if(CAEN_DGTZ_Success!=(ret=digitizer_read())){
       printf("%s: error in digitizer_read\n",__func__);
@@ -379,7 +394,7 @@ int digitizer_adjust_pedestals(double precision){
       double ped=0;
       int i=JCH2i(JCH);
       if(i<32){// not a trigger
-        if(g_used742[JCH]){
+        if(g_rp.used742[JCH]){
           for(int j=0; j<g_nDT5742[JCH];++j){          ped+=(double)g_aDT5742[JCH][j]/g_nDT5742[JCH];        }
           // correction
           double dp=ped-WDcfg.desiredPED[i];
@@ -402,7 +417,7 @@ int digitizer_adjust_pedestals(double precision){
     for(int JCH=0; JCH<(WDcfg.MaxGroupNumber)*MAX_X742_CHANNEL_SIZE; ++JCH){
       int i=JCH2i(JCH);
       if(i<32){// not a trigger
-        if(g_used742[JCH]){
+        if(g_rp.used742[JCH]){
           ret = CAEN_DGTZ_SetChannelDCOffset(DHandle,i, WDcfg.DCoffset[i]);
           if(CAEN_DGTZ_Success!=ret){
             printf("%s: error in CAEN_DGTZ_SetChannelDCOffset\n",__func__);

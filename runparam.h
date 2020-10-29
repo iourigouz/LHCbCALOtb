@@ -40,6 +40,8 @@ class runParam {
   bool init;
   double printperiod, writeperiod, cmdperiod, updperiod;
   
+  int write_data;
+  
   int PEDpatt, LEDpatt, SIGpatt;
   double PEDperiod, LEDperiod; // in seconds!!!
 
@@ -50,6 +52,8 @@ class runParam {
   uint32_t vme_adc1, vme_adc2, vme_adc3;
   uint32_t vme_corbo, vme_crb_ch, vme_crb_ch2, vme_crb_irq, vme_crb_vec;
   uint32_t vme_v259, vme_v1290, vme_v260, vme_v812, vme_v812_2;
+  
+  int vme_conetnode, dig_conetnode, dig2_conetnode;
   
   int nchans;
   char chnam[MAXCHANS][MAXNAMELENGTH];
@@ -67,6 +71,7 @@ class runParam {
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;
   bool digitizer_used;
+  int used742[MAXCHANS];
   
   double cx1[3],cy1[3],cx2[3],cy2[3],cx3[3],cy3[3],cx4[3],cy4[3];
   
