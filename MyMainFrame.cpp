@@ -644,7 +644,9 @@ void MyMainFrame::drawHist()
       DIMHIST* dhaddr_ref=(DIMHIST*)addr_ref;
       DIMHIST dh;
       dh.Copy(*dhaddr);
-      if(g_subtract_ref)dh.Subtract(*dhaddr_ref);
+      if(g_subtract_ref){
+        if(0!=strcmp("WAV",suppl)) dh.Subtract(*dhaddr_ref);
+      }
       dh.fill_TH1D(h0);
       if(0!=strcmp(g_name_selected,g_name_sel_prev)){
         gPad->SetRightMargin(0.17);
