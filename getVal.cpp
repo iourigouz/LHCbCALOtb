@@ -23,6 +23,9 @@
 
 ClassImp(getVal)
 
+#define TOTWID 500
+#define TOTHGT 500
+
 getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
 {
   Question=question;
@@ -31,7 +34,7 @@ getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
   //  Val[0]='\0';
   Comment=comment;
   
-  fMain = new TGTransientFrame(gClient->GetRoot(), main, 270, 400);
+  fMain = new TGTransientFrame(gClient->GetRoot(), main, TOTWID, TOTHGT);
   fMain->Connect("CloseWindow()", "getVal", this, "CloseWindow()");
   fMain->DontCallClose(); // to avoid double deletions.
   
@@ -39,7 +42,7 @@ getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
   fMain->SetCleanup(kDeepCleanup);
   
   // Create a horizontal frame for username
-  TGHorizontalFrame *hframVal = new TGHorizontalFrame(fMain, 270, 40);
+  TGHorizontalFrame *hframVal = new TGHorizontalFrame(fMain, TOTWID, 40);
   
   TGLabel *tVal;
   if(question)tVal=new TGLabel(hframVal,question);
@@ -51,17 +54,17 @@ getVal::getVal(const TGWindow *main, char* question, char* val, char* comment)
   fMain->AddFrame(hframVal,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fVal->Resize(150,fVal->GetDefaultHeight());
 
-  TGHorizontalFrame *hframCom = new TGHorizontalFrame(fMain, 270, 40);
+  TGHorizontalFrame *hframCom = new TGHorizontalFrame(fMain, TOTWID, 40);
   TGLabel *tCom=new TGLabel(hframCom,"Comments:");
   hframCom->AddFrame(tCom, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fMain->AddFrame(hframCom,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
 
-  fEdit = new TGTextEdit(fMain, 270, 50, kSunkenFrame | kDoubleBorder);
+  fEdit = new TGTextEdit(fMain, TOTWID, 300, kSunkenFrame | kDoubleBorder);
   fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3));
   fEdit->Connect("Closed()", "getVal", this, "DoCANCEL()");
 
   // Create a horizontal frame for OK and CANCEL buttons
-  TGHorizontalFrame *hframButt = new TGHorizontalFrame(fMain, 270, 50);
+  TGHorizontalFrame *hframButt = new TGHorizontalFrame(fMain, TOTWID, 300);
   fOK = new TGTextButton(hframButt, "  &OK  ");
   //fOK->SetToolTipText("YES, PLEASE save to DB",200);
   fOK->Connect("Released()", "getVal", this, "DoOK()");

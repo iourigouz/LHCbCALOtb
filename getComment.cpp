@@ -23,29 +23,32 @@
 
 ClassImp(getComment)
 
+#define TOTWID 500
+#define TOTHGT 500
+
 getComment::getComment(const TGWindow *main, char* answer, char* comment)
 {
   Answer=answer;
   Comment=comment;
   
-  fMain = new TGTransientFrame(gClient->GetRoot(), main, 270, 400);
+  fMain = new TGTransientFrame(gClient->GetRoot(), main, TOTWID, TOTHGT);
   fMain->Connect("CloseWindow()", "getComment", this, "CloseWindow()");
   fMain->DontCallClose(); // to avoid double deletions.
   
   // use hierarchical cleaning
   fMain->SetCleanup(kDeepCleanup);
   
-  TGHorizontalFrame *hframCom = new TGHorizontalFrame(fMain, 270, 40);
+  TGHorizontalFrame *hframCom = new TGHorizontalFrame(fMain, TOTWID, 40);
   TGLabel *tCom=new TGLabel(hframCom,"Enter a comment:");
   hframCom->AddFrame(tCom, new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
   fMain->AddFrame(hframCom,new TGLayoutHints(kLHintsLeft, 5, 1, 3, 4));
 
-  fEdit = new TGTextEdit(fMain, 270, 140, kSunkenFrame | kDoubleBorder);
+  fEdit = new TGTextEdit(fMain, TOTWID, 300, kSunkenFrame | kDoubleBorder);
   fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3));
   fEdit->Connect("Closed()", "getComment", this, "DoCANCEL()");
 
   // Create a horizontal frame for OK and CANCEL buttons
-  TGHorizontalFrame *hframButt = new TGHorizontalFrame(fMain, 270, 50);
+  TGHorizontalFrame *hframButt = new TGHorizontalFrame(fMain, TOTWID, 50);
   fOK = new TGTextButton(hframButt, "  &OK  ");
   //fOK->SetToolTipText("YES, PLEASE add the comment to the logbook",200);
   fOK->Connect("Released()", "getComment", this, "DoOK()");

@@ -140,6 +140,7 @@ int digitizer_init(char* config_name){
   }
   
   WDcfg.EnableMask &= (1<<(WDcfg.Nch/8))-1;
+  WDcfg.PostTrigger=g_rp.dig_posttrigger;
   
   ret = ProgramDigitizer(DHandle, WDcfg, BoardInfo);
   if (ret!=CAEN_DGTZ_Success) {
@@ -161,16 +162,25 @@ int digitizer_init(char* config_name){
   }
 
   // correction tables. Always use AUTO Corrections from DRS4 flash memory !!!
-  WDcfg.useCorrections = -1;  // manual corrections will be implemented later
-  ret = CAEN_DGTZ_LoadDRS4CorrectionData(DHandle, WDcfg.DRS4Frequency);
-  if(ret!=CAEN_DGTZ_Success){
-    printf("%s WARNING: LoadDRS4CorrectionData returns %d\n",__func__,ret);
-    goto Close;
+  //WDcfg.useCorrections = -1;  // manual corrections will be implemented later
+  if(0!=g_rp.dig_use_correction){
+    ret = CAEN_DGTZ_LoadDRS4CorrectionData(DHandle, WDcfg.DRS4Frequency);
+    if(ret!=CAEN_DGTZ_Success){
+      printf("%s WARNING: LoadDRS4CorrectionData returns %d\n",__func__,ret);
+      goto Close;
+    }
+    ret = CAEN_DGTZ_EnableDRS4Correction(DHandle);
+    if(ret!=CAEN_DGTZ_Success){
+      printf("%s WARNING: EnableDRS4Correction returns %d\n",__func__,ret);
+      goto Close;
+    }
   }
-  ret = CAEN_DGTZ_EnableDRS4Correction(DHandle);
-  if(ret!=CAEN_DGTZ_Success){
-    printf("%s WARNING: EnableDRS4Correction returns %d\n",__func__,ret);
-    goto Close;
+  else{
+    ret = CAEN_DGTZ_DisableDRS4Correction(DHandle);
+    if(ret!=CAEN_DGTZ_Success){
+      printf("%s WARNING: DisableDRS4Correction returns %d\n",__func__,ret);
+      goto Close;
+    }
   }
   
   // allocate event buffer

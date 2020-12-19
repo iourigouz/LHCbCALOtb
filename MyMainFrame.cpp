@@ -636,7 +636,7 @@ void MyMainFrame::drawHist()
       c1->Update();
     }
   }
-  else{
+  else {
     void* addr=address_dimhist(type, patt, cell, chan, suppl);
     void* addr_ref=address_ref_dimhist(type, patt, cell, chan, suppl);
     if(addr){
@@ -1045,12 +1045,12 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   lbNrun->SetTextJustify(kTextLeft|kTextTop);
   hframv->AddFrame(lbNrun, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 30, 2));
   
-  lbTbeg=new TGLabel(hframv," STARTED:      ---:---:---");
+  lbTbeg=new TGLabel(hframv," STARTED:      ---:---:-------");
   //lbTbeg->SetTextFont(font16b);
   lbTbeg->SetTextJustify(kTextLeft|kTextTop);
   hframv->AddFrame(lbTbeg, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
   
-  lbTdur=new TGLabel(hframv," DURATION:     ---:---:---");
+  lbTdur=new TGLabel(hframv," DURATION:     ---:---:-------");
   //lbTdur->SetTextFont(font16b);
   lbTdur->SetTextJustify(kTextLeft|kTextTop);
   hframv->AddFrame(lbTdur, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
@@ -1064,23 +1064,23 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   lbEvCount->SetTextJustify(kTextLeft);
   hframv->AddFrame(lbEvCount, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 20, 2));
   
-  lbNLED=new TGLabel(hframv," LED  ----------");
+  lbNLED=new TGLabel(hframv," LED  ---------------");
   lbNLED->SetTextJustify(kTextLeft);
   hframv->AddFrame(lbNLED, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
   
-  lbNPED=new TGLabel(hframv," PED  ----------");
+  lbNPED=new TGLabel(hframv," PED  ---------------");
   lbNPED->SetTextJustify(kTextLeft);
   hframv->AddFrame(lbNPED, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
   
-  lbNSIG=new TGLabel(hframv," SIG  ----------");
+  lbNSIG=new TGLabel(hframv," SIG  ---------------");
   lbNSIG->SetTextJustify(kTextLeft);
   hframv->AddFrame(lbNSIG, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
   
-  lbNTOT=new TGLabel(hframv," TOT  ----------");
+  lbNTOT=new TGLabel(hframv," TOT  ---------------");
   lbNTOT->SetTextJustify(kTextLeft);
   hframv->AddFrame(lbNTOT, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 2));
   
-  lbConf=new TGLabel(hframv," CONFIG: ----------------");
+  lbConf=new TGLabel(hframv," CONFIG: ---------------------");
   lbConf->SetTextJustify(kTextLeft);
   hframv->AddFrame(lbConf, new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 20, 2));
   

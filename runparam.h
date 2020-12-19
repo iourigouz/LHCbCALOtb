@@ -65,8 +65,10 @@ class runParam {
   // negative (default): A=ped-min
   // positive: A=max-ped
   int polarity[MAXCHANS];  // 777-positive, otherwise negative
-  int dig_PED_summ;             // 0 -> MAX, otherwise PED
+  int dig_PED_summ;         // DIG PED summary plot: 0 -> AMP, otherwise PED
   int dig_adjust_offsets;    // requests dig pedestal adjust at start of run (0->NO, !=0->YES)
+  int dig_use_correction; // whether to use or not the factory corrections
+  double dig_posttrigger; // The posttrigger delay value, in % of the window (204.8 ns), default=5
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;
