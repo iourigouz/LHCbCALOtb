@@ -141,6 +141,7 @@ int digitizer_init(char* config_name){
   
   WDcfg.EnableMask &= (1<<(WDcfg.Nch/8))-1;
   WDcfg.PostTrigger=g_rp.dig_posttrigger;
+  WDcfg.DRS4Frequency=g_rp.dig_frequency;
   
   ret = ProgramDigitizer(DHandle, WDcfg, BoardInfo);
   if (ret!=CAEN_DGTZ_Success) {

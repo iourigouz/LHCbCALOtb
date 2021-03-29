@@ -10,13 +10,14 @@ SOFLAGS  = -shared -Wl,-soname,
 LINKDEF  = LinkDef_viewtb.h
 NAME     = viewtb
 
-TB_DIR = ../tb
-CPPFLAGS += -I$(TB_DIR) 
+#TB_DIR = ../tb
+#CPPFLAGS += -I$(TB_DIR) 
 
 #SOURCE := $(filter-out $(NAME)Cint.cpp, $(wildcard *.cpp))
 SOURCE := $(NAME).cpp MyMainFrame.cpp getVal.cpp getComment.cpp
 OBJS := $(patsubst %.cpp,%.o,$(SOURCE))
-OBJECTS := $(patsubst $(TB_DIR)/%.o,%.o,$(OBJS))
+#OBJECTS := $(patsubst $(TB_DIR)/%.o,%.o,$(OBJS))
+OBJECTS := $(OBJS)
 
 CLASSINCLUDES = MyMainFrame.h getVal.h getComment.h
 
@@ -39,9 +40,9 @@ $(NAME)Cint.o: $(CLASSINCLUDES) $(LINKDEF)
 	@echo Makefile compiling $<
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
-%.o: $(TB_DIR)/%.cpp
-	@echo Makefile compiling $<
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+#%.o: $(TB_DIR)/%.cpp
+#	@echo Makefile compiling $<
+#	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(NAME) $(OBJECTS) $(NAME)Cint.* lib$(NAME).so *.d core *~

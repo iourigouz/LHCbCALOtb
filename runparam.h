@@ -69,6 +69,7 @@ class runParam {
   int dig_adjust_offsets;    // requests dig pedestal adjust at start of run (0->NO, !=0->YES)
   int dig_use_correction; // whether to use or not the factory corrections
   double dig_posttrigger; // The posttrigger delay value, in % of the window (204.8 ns), default=5
+  int dig_frequency; // The digitizer sampling frequency code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;

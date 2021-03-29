@@ -118,6 +118,7 @@ void runParam::reset(){
   dig_PED_summ=1; // values of dped in the PED DIG summary histo
   dig_use_correction=1;
   dig_posttrigger=5;
+  dig_frequency=0; // The digitizer sampling frequency code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
   
   cx1[0]=-7046.; cx1[1]=140.; cx1[2]=7329.;
   cy1[0]=-7119.; cy1[1]= 30.; cy1[2]=7157.;
@@ -280,6 +281,8 @@ void runParam::write(const char* fnam){
   fprintf(f,"DIG_ADJUST_OFFSETS %d\n",dig_adjust_offsets);
   fprintf(f,"DIG_USE_CORRECTION %d\n",dig_use_correction);
   fprintf(f,"DIG_POSTTRIGGER %f\n",dig_posttrigger);
+  fprintf(f,"// The digitizer sampling frequency code: 0->5GHz (default), 1->2.5GHz, 2->1GHz, 3->0.75GHz");
+  fprintf(f,"DIG_FREQUENCY %f\n",dig_frequency);
   fprintf(f,"//\n");
   
   fprintf(f,"DWCX1PAR %8.1f %8.1f %8.1f\n", cx1[0], cx1[1], cx1[2]);
@@ -419,6 +422,9 @@ void runParam::read(const char* fnam){
       }
       else if(0==strcmp(what,"DIG_POSTTRIGGER")){
         if(nit>1 && nit1>0)dig_posttrigger=n;
+      }
+      else if(0==strcmp(what,"DIG_FREQUENCY")){
+        if(nit>1 && nit1>0)dig_frequency=n;
       }
       else if(0==strcmp(what,"DWC1XPAR")){
         if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}
