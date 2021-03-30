@@ -26,6 +26,8 @@ int vme_clearCORBO(); // clear BUSY VME_CRB_CH
 int vme_setCORBO();   // set BUSY VME_CRB_CH
 int vme_clearCORBO_2(); // clear BUSY VME_CRB_CH2
 int vme_setCORBO_2();   // set BUSY VME_CRB_CH2
+int vme_readCORBO_3(uint32_t& count);   // read event counter from VME_CRB_CH3
+int vme_clearCORBO_3(); // reset the counter
 
 int vme_read_pattern();
 int vme_readADC();
@@ -99,7 +101,8 @@ int CORBO_test(const uint32_t base, int ch);
 int CORBO_clear(const uint32_t base, int ch);
 int CORBO_read_CSR(const uint32_t base, int ch, uint16_t& data);
 int CORBO_write_CSR(const uint32_t base, const int ch, const uint16_t data);
-
+int CORBO_read_evcounter(const uint32_t base, int ch, uint32_t& count);
+int CORBO_reset_evcounter(const uint32_t base, int ch);
 //---------
 
 int ADC_write_CSR(const uint32_t base, uint16_t& data);

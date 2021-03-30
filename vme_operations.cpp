@@ -642,6 +642,23 @@ int CORBO_init(int base){
       return -105;
     }
   }
+  
+  if(g_rp.vme_crb_ch3!=g_rp.vme_crb_ch && g_rp.vme_crb_ch3!=g_rp.vme_crb_ch2){// the channel for pulse generation
+    if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch3, 0xC0)) ){ // enable third channel to count inputs
+      printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xC0\n", __func__,ret,g_rp.vme_crb_ch3);
+      return -101;
+    }
+    uint16_t csr3=0;
+    if(cvSuccess!=(ret=CORBO_read_CSR(base, g_rp.vme_crb_ch3, csr3)) ){ // check CSR
+      printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,g_rp.vme_crb_ch3);
+      return -104;
+    }
+    if(0xC0!=(csr3&0xFF)){
+      printf("WARNING: bad csrL = 0x%x for counter, CORBO ch %d\n", (csr3&0xFF), g_rp.vme_crb_ch3);
+      return -105;
+    }
+  }
+  
   return 0;
 }
 
@@ -753,6 +770,45 @@ int CORBO_write_CSR(const uint32_t base, const int ch, uint16_t data){
   data &= 0xFF; // only csrL is writable
   uint32_t addr=base+2*ch;// CSR
   return CAENVME_WriteCycle(BHandle, addr, &data, cvA24_S_DATA, cvD16);
+}
+
+int CORBO_read_evcounter(const uint32_t base, int ch, uint32_t& count){
+  if(ch<0 || ch>3) return -1;
+  uint16_t lowbits, highbits; // CORBO does not support cvD32 !!! Reading separately 2x16 bits !!!
+  int res=cvSuccess;
+  uint32_t addr=base+0x10+4*ch;// Event Number counter
+  if(cvSuccess!=(res=CAENVME_ReadCycle(BHandle, addr, &highbits, cvA24_S_DATA, cvD16))){
+    printf("%s: error %d reading CORBO event counter highbits ch %d, addr 0x%X+0x%X\n",
+           __func__,res,ch,base,addr-base);
+    return res;
+  }
+  addr+=2;
+  if(cvSuccess!=(res=CAENVME_ReadCycle(BHandle, addr, &lowbits, cvA24_S_DATA, cvD16))){
+    printf("%s: error %d reading CORBO event counter lowbits ch %d, addr 0x%X+0x%X\n",
+           __func__,res,ch,base,addr-base);
+    return res;
+  }
+  count=(highbits<<16)|lowbits;
+  return cvSuccess;
+}
+
+int CORBO_reset_evcounter(const uint32_t base, int ch){
+  if(ch<0 || ch>3) return -1;
+  uint16_t zero=0; // CORBO does not support cvD32 !!! Writing separately 2x16 bits !!!
+  int res=cvSuccess;
+  uint32_t addr=base+0x10+4*ch;// Event Number counter
+  if(cvSuccess!=(res=CAENVME_WriteCycle(BHandle, addr, &zero, cvA24_S_DATA, cvD16))){
+    printf("%s: error %d writing CORBO event counter highbits ch %d, addr 0x%X+0x%X\n",
+           __func__,res,ch,base,addr-base);
+    return res;
+  }
+  addr+=2;
+  if(cvSuccess!=(res=CAENVME_WriteCycle(BHandle, addr, &zero, cvA24_S_DATA, cvD16))){
+    printf("%s: error %d writing CORBO event counter lowbits ch %d, addr 0x%X+0x%X\n",
+           __func__,res,ch,base,addr-base);
+    return res;
+  }
+  return cvSuccess;
 }
 
 //---------------- End CORBO functions --------------------------------
@@ -1169,9 +1225,12 @@ int vme_start(){
     return c_res;
   }
   
-  //    if( cvSuccess!=(c_res=V260_clear_scalers(g_rp.vme_v260)) ){
-  //            printf("clear scalers V260: returns %d\n",c_res);
-  //    }
+  if(g_rp.vme_crb_ch3!=g_rp.vme_crb_ch2 && g_rp.vme_crb_ch3!=g_rp.vme_crb_ch){
+    if( cvSuccess!=(c_res=CORBO_reset_evcounter(g_rp.vme_corbo,g_rp.vme_crb_ch3)) ){
+      printf("%s: reset CORBO counter ch3 returns %d\n",__func__,c_res);
+      return c_res;
+    }
+  }
   
   //CVIRQLevels mask_enable=cvirq(g_rp.vme_crb_irq);
   //if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, cvirq(g_rp.vme_crb_irq)))){; // level 3
@@ -1358,17 +1417,37 @@ int vme_wait0(uint32_t timeout){
 }
 
 int vme_clearCORBO(){
-    CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch);
+  return CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch);
 }
 
 int vme_setCORBO(){
-    CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch);
+  return CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch);
 }
 
 int vme_clearCORBO_2(){
-    CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch2);
+  return CORBO_clear(g_rp.vme_corbo,g_rp.vme_crb_ch2);
 }
 
 int vme_setCORBO_2(){
-    CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch2);
+  return CORBO_setbusy(g_rp.vme_corbo,g_rp.vme_crb_ch2);
+}
+
+int vme_readCORBO_3(uint32_t &count){
+  if(g_rp.vme_crb_ch3!=g_rp.vme_crb_ch2 && g_rp.vme_crb_ch3!=g_rp.vme_crb_ch){
+    return CORBO_read_evcounter(g_rp.vme_corbo,g_rp.vme_crb_ch3,count);
+  }
+  else{
+    printf("%s: WARNING: vme_crb_ch3 not defined!!!\n",__func__);
+    return cvSuccess;
+  }
+}
+
+int vme_clearCORBO_3(){
+  if(g_rp.vme_crb_ch3!=g_rp.vme_crb_ch2 && g_rp.vme_crb_ch3!=g_rp.vme_crb_ch){
+    return CORBO_reset_evcounter(g_rp.vme_corbo,g_rp.vme_crb_ch3);
+  }
+  else{
+    printf("%s: WARNING: vme_crb_ch3 not defined!!!\n",__func__);
+    return cvSuccess;
+  }
 }

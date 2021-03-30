@@ -72,12 +72,12 @@ void ctrc_hdl(int s){
 void ctrd_hdl(int s){
   printf("\nCaught signal %d\n",s);
   //g_exit=true;
-  g_print=(g_print+1)%4;
+  g_print=(g_print+1)%2;
 }
 
 void ctrz_hdl(int s){
-  //printf("\nCaught signal %d\n",s);
-  g_print=(g_print+1)%4;
+  printf("\nCaught signal %d\n",s);
+  g_print=(g_print+1)%2;
 }
 
 std::string exec(const char* cmd) {
@@ -144,9 +144,17 @@ int start_run(const char* task){
   
   char digitizer_param[128];
   sprintf(digitizer_param,"X742_%s.param",task);
-  if(0!=digitizer_init(digitizer_param)){
-    printf("%s: cannot configure digitizer, stop\n",__func__);
-    return 7;
+  if(g_rp.digitizer_used){
+    if(0!=digitizer_init(digitizer_param)){
+      printf("%s: cannot configure digitizer, stop\n",__func__);
+      return 7;
+    }
+  }
+  if(g_rp.digitizer2_used){
+    if(0!=digitizer2_init(digitizer_param)){
+      printf("%s: cannot configure digitizer 2, stop\n",__func__);
+      return 7;
+    }
   }
   
   printf("%s: preparing environment...\n",__func__);
@@ -177,14 +185,27 @@ int start_run(const char* task){
   
   dimsrv_createhistsvc();
   
-  if(0!=digitizer_adjust_pedestals(g_rp.dig_adjust_offsets)){
-    printf("%s: error in digitizer_adjust_pedestals\n",__func__); 
-    //    return 12;
+  if(g_rp.digitizer_used){
+    if(0!=digitizer_adjust_pedestals(g_rp.dig_adjust_offsets)){
+      printf("%s: error in digitizer_adjust_pedestals\n",__func__); 
+      //    return 12;
+    }
+  }
+  if(g_rp.digitizer2_used){
+    if(0!=digitizer2_adjust_pedestals(g_rp.dig2_adjust_offsets)){
+      printf("%s: error in digitizer2_adjust_pedestals\n",__func__); 
+      //    return 12;
+    }
   }
   
   g_ievt=0, g_nped=0, g_nled=0, g_nsig=0;
   
-  if(0!=digitizer_start()){printf("%s: error in digitizer_start\n",__func__); return 11; }
+  if(g_rp.digitizer_used){
+    if(0!=digitizer_start()){printf("%s: error in digitizer_start\n",__func__); return 11; }
+  }
+  if(g_rp.digitizer2_used){
+    if(0!=digitizer2_start()){printf("%s: error in digitizer2_start\n",__func__); return 11; }
+  }
   if(0!=vme_start()){ printf("%s: error in vme_start\n",__func__); return 10; }
   
   g_running=true;
@@ -201,6 +222,10 @@ int stop_run(){
     printf("%s: error in digitizer_stop\n",__func__);
     return 2;
   }
+  if(0!=digitizer2_stop()){
+    printf("%s: error in digitizer2_stop\n",__func__);
+    return 2;
+  }
   
   if(0!=vme_close()){
     printf("%s: error in vme_close\n",__func__);
@@ -209,6 +234,10 @@ int stop_run(){
   
   if(0!=digitizer_close()){
     printf("%s: error in digitizer_close\n",__func__);
+    return 4;
+  }
+  if(0!=digitizer2_close()){
+    printf("%s: error in digitizer2_close\n",__func__);
     return 4;
   }
   
@@ -231,6 +260,7 @@ int exit_server(){
   int res=0;
   res=vme_close();
   res|=digitizer_close();
+  res|=digitizer2_close();
   
   return res;
 }
@@ -272,6 +302,63 @@ int parse_command(const char* dimstr){
     g_stoprun=true;
   }
   return 0;
+}
+
+int read_all(){
+  int ret=0;
+  
+  bool adcerr=false, tdcerr=false;
+  bool digreaderr=false, digclearerr=false;
+  bool dig2readerr=false, dig2clearerr=false;
+  
+  if(0!=vme_readADC())      adcerr=true;     
+  if(0!=vme_readTDC())      tdcerr=true;     
+  if(0!=digitizer_read())   digreaderr=true; 
+  if(0!=digitizer_clear())  digclearerr=true;
+  if(0!=digitizer2_read())   dig2readerr=true; 
+  if(0!=digitizer2_clear())  dig2clearerr=true;
+  
+  fill_all();
+  
+  g_ievt++;
+  if(g_pattern==g_rp.SIGpatt)g_nsig++;
+  else if(g_pattern==g_rp.LEDpatt)g_nled++;
+  else if(g_pattern==g_rp.PEDpatt)g_nped++;
+  
+  if(adcerr){
+    printf("%s ev%6d: patt=%d, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,g_pattern,g_t-g_tprev);
+    ret=1;
+  }
+  if(tdcerr){
+    printf("%s ev%6d: patt=%d, WARNING error vme_readTDC, dt=%f\n", __func__,g_ievt,g_pattern,g_t-g_tprev);
+    ret=2;
+  }
+  if(digreaderr){
+    printf("%s ev%6d: patt=%d, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,g_pattern,g_t-g_tprev);
+    ret=3;
+  }
+  if(digclearerr){
+    printf("%s ev%6d: patt=%d, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,g_pattern,g_t-g_tprev);
+    ret=4;
+  }
+  if(dig2readerr){
+    printf("%s ev%6d: patt=%d, WARNING error digitizer2_read, dt=%f\n",__func__,g_ievt,g_pattern,g_t-g_tprev);
+    ret=5;
+  }
+  if(dig2clearerr){
+    printf("%s ev%6d: patt=%d, WARNING error digitizer2_clear, dt=%f\n", __func__,g_ievt,g_pattern,g_t-g_tprev);
+    ret=6;
+  }
+  
+  return ret;
+}
+
+void print_stat(){
+    uint32_t count;
+    vme_readCORBO_3(count);
+    int64_t ungated=count;
+    printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped, %7d ungated\n", 
+           g_t, g_ievt, g_nsig, g_nled, g_nped, ungated);
 }
 
 int main(int argc, char *argv[]){
@@ -328,79 +415,30 @@ int main(int argc, char *argv[]){
       if( (retwait & VME_WAIT_OK) ){
         if( VME_WAIT_SIG == (retwait & VME_WAIT_SIG) ){
           g_pattern=g_rp.SIGpatt;
-          bool adcerr=false, tdcerr=false, digreaderr=false, digclearerr=false;
           
-          if(0!=vme_readADC())      adcerr=true;
-          if(0!=vme_readTDC())      tdcerr=true;
-          if(0!=digitizer_read())   digreaderr=true;
-          if(0!=digitizer_clear())  digclearerr=true;
-          
-          fill_all();
-          g_ievt++; g_nsig++;
-          
-          if(adcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(tdcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readTDC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(digreaderr)  printf("%s ev%6d: ret=0x%X, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(digclearerr) printf("%s ev%6d: ret=0x%X, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          
-          if( (1==g_ievt) || (0==g_ievt%1000) )
-            printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n", g_t, g_ievt, g_nsig, g_nled, g_nped);
+          if(0!=read_all())printf("%s ev%6d: ret=0x%X, WARNING error read_all\n",__func__,g_ievt,retwait);
         }
         if( VME_WAIT_LED == (retwait & VME_WAIT_LED) ){
           g_pattern=g_rp.LEDpatt;
-          bool adcerr=false, tdcerr=false, digreaderr=false, digclearerr=false;
           
-          if(0!=vme_pulseLED())     printf("%s ev%6d: ret=0x%X, WARNING error vme_pulseLED\n",__func__,g_ievt,retwait);
+          if(0!=vme_pulseLED()) printf("%s ev%6d: ret=0x%X, WARNING error vme_pulseLED\n",__func__,g_ievt,retwait);
           usleep(10);
           
-          if(0!=vme_readADC())      adcerr=true;     
-          if(0!=vme_readTDC())      tdcerr=true;     
-          if(0!=digitizer_read())   digreaderr=true; 
-          if(0!=digitizer_clear())  digclearerr=true;
-          
-          fill_all();
-          g_ievt++; g_nled++;
-      
-          if(adcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(tdcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readTDC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(digreaderr)  printf("%s ev%6d: ret=0x%X, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(digclearerr) printf("%s ev%6d: ret=0x%X, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          
-          if( (1==g_ievt) || (0==g_ievt%1000) ) printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
-                   g_t, g_ievt, g_nsig, g_nled, g_nped);
+          if(0!=read_all())printf("%s ev%6d: ret=0x%X, WARNING error read_all\n",__func__,g_ievt,retwait);
         }
         if( VME_WAIT_PED == (retwait & VME_WAIT_PED) ){
           g_pattern=g_rp.PEDpatt;
-          bool adcerr=false, tdcerr=false, digreaderr=false, digclearerr=false;
           
-          if(0!=vme_pulsePED())     printf("%s ev%6d: ret=0x%X, WARNING error vme_pulsePED\n",__func__,g_ievt,retwait);
+          if(0!=vme_pulsePED())printf("%s ev%6d: ret=0x%X, WARNING error vme_pulsePED\n",__func__,g_ievt,retwait);
           usleep(10);
           
-          if(0!=vme_readADC())      adcerr=true;     
-          if(0!=vme_readTDC())      tdcerr=true;     
-          if(0!=digitizer_read())   digreaderr=true; 
-          if(0!=digitizer_clear())  digclearerr=true;
-          
-          fill_all();
-          g_ievt++; g_nped++;
-          
-          if(adcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readADC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(tdcerr)      printf("%s ev%6d: ret=0x%X, WARNING error vme_readTDC, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(digreaderr)  printf("%s ev%6d: ret=0x%X, WARNING error digitizer_read, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          if(digclearerr) printf("%s ev%6d: ret=0x%X, WARNING error digitizer_clear, dt=%f\n",__func__,g_ievt,retwait,g_t-g_tprev);
-          
-          if( (1==g_ievt) || (0==g_ievt%1000) ) printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped\n",
-                   g_t, g_ievt, g_nsig, g_nled, g_nped);
+          if(0!=read_all())printf("%s ev%6d: ret=0x%X, WARNING error read_all\n",__func__,g_ievt,retwait);
         }
         
         if( VME_WAIT_SIG == (retwait & VME_WAIT_SIG) ){
           if(0!=vme_clearCORBO())   printf("%s ev%6d: WARNING error vme_clearCORBO\n",__func__,g_ievt);
         }
-        // else // !!! IG
         if( (VME_WAIT_LED == (retwait & VME_WAIT_LED)) || (VME_WAIT_PED == (retwait & VME_WAIT_PED)) ){
-          //int irqvec=0, irqlev=0;
-          //vme_getirq(irqlev,irqvec);
-          //if(0!=irqlev)printf("%s ev%6d irqlev %d, irqvec 0X%X, evkind %d\n",__func__,g_ievt,irqlev,irqvec,retwait%8);
           if(0!=vme_clearCORBO_2())   printf("%s ev%6d: WARNING error vme_clearCORBO_2\n",__func__,g_ievt);
         }
       }
@@ -421,8 +459,14 @@ int main(int argc, char *argv[]){
     }
     else usleep(5000);
     
-    if(dt_print>g_rp.printperiod){
-      tst0_print=tst_print;
+    if(0==g_print){
+      if( (1==g_ievt) || (0==g_ievt%1000) ) print_stat();
+    }
+    else if(1==g_print){
+      if(dt_print>g_rp.printperiod){
+        tst0_print=tst_print;
+        print_stat();
+      }
     }
     
     if(dt_write>g_rp.writeperiod){

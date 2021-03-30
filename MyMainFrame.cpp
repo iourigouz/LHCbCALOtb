@@ -78,15 +78,15 @@ DIMHIST g_d_dwc1x_LED, g_d_dwc1y_LED, g_d_dwc2x_LED, g_d_dwc2y_LED;
 DIMHIST g_d_dwc3x_LED, g_d_dwc3y_LED, g_d_dwc4x_LED, g_d_dwc4y_LED;
 DIMHIST g_d_dwc1x_SIG, g_d_dwc1y_SIG, g_d_dwc2x_SIG, g_d_dwc2y_SIG; 
 DIMHIST g_d_dwc3x_SIG, g_d_dwc3y_SIG, g_d_dwc4x_SIG, g_d_dwc4y_SIG;
-DIMHIST g_d_DIG_LEDPED[NDT5742CHAN];
-DIMHIST g_d_DIG_LEDAMP[NDT5742CHAN];
-DIMHIST g_d_DIG_LEDWAV[NDT5742CHAN];
-DIMHIST g_d_DIG_PEDPED[NDT5742CHAN];
-DIMHIST g_d_DIG_PEDAMP[NDT5742CHAN];
-DIMHIST g_d_DIG_PEDWAV[NDT5742CHAN];
-DIMHIST g_d_DIG_SIGPED[NDT5742CHAN];
-DIMHIST g_d_DIG_SIGAMP[NDT5742CHAN];
-DIMHIST g_d_DIG_SIGWAV[NDT5742CHAN];
+DIMHIST g_d_DIG_LEDPED[2*N742CHAN];
+DIMHIST g_d_DIG_LEDAMP[2*N742CHAN];
+DIMHIST g_d_DIG_LEDWAV[2*N742CHAN];
+DIMHIST g_d_DIG_PEDPED[2*N742CHAN];
+DIMHIST g_d_DIG_PEDAMP[2*N742CHAN];
+DIMHIST g_d_DIG_PEDWAV[2*N742CHAN];
+DIMHIST g_d_DIG_SIGPED[2*N742CHAN];
+DIMHIST g_d_DIG_SIGAMP[2*N742CHAN];
+DIMHIST g_d_DIG_SIGWAV[2*N742CHAN];
 // DIM dummies
 DIMSTAT g_d_status_dummy;
 DIMHIST g_d_hist_dummy;
@@ -105,15 +105,15 @@ DIMHIST g_d_dwc1x_LED_ref, g_d_dwc1y_LED_ref, g_d_dwc2x_LED_ref, g_d_dwc2y_LED_r
 DIMHIST g_d_dwc3x_LED_ref, g_d_dwc3y_LED_ref, g_d_dwc4x_LED_ref, g_d_dwc4y_LED_ref;
 DIMHIST g_d_dwc1x_SIG_ref, g_d_dwc1y_SIG_ref, g_d_dwc2x_SIG_ref, g_d_dwc2y_SIG_ref; 
 DIMHIST g_d_dwc3x_SIG_ref, g_d_dwc3y_SIG_ref, g_d_dwc4x_SIG_ref, g_d_dwc4y_SIG_ref;
-DIMHIST g_d_DIG_LEDPED_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_LEDAMP_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_LEDWAV_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_PEDPED_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_PEDAMP_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_PEDWAV_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_SIGPED_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_SIGAMP_ref[NDT5742CHAN];
-DIMHIST g_d_DIG_SIGWAV_ref[NDT5742CHAN];
+DIMHIST g_d_DIG_LEDPED_ref[2*N742CHAN];
+DIMHIST g_d_DIG_LEDAMP_ref[2*N742CHAN];
+DIMHIST g_d_DIG_LEDWAV_ref[2*N742CHAN];
+DIMHIST g_d_DIG_PEDPED_ref[2*N742CHAN];
+DIMHIST g_d_DIG_PEDAMP_ref[2*N742CHAN];
+DIMHIST g_d_DIG_PEDWAV_ref[2*N742CHAN];
+DIMHIST g_d_DIG_SIGPED_ref[2*N742CHAN];
+DIMHIST g_d_DIG_SIGAMP_ref[2*N742CHAN];
+DIMHIST g_d_DIG_SIGWAV_ref[2*N742CHAN];
 // end DIM stuff
 
 ClassImp(MyMainFrame)
@@ -185,7 +185,7 @@ int list_dimhists(){
   if(g_d_dwc3y_SIG.isUsed()){nhists++; printf("%s\n",g_d_dwc3y_SIG.name);}
   if(g_d_dwc4y_SIG.isUsed()){nhists++; printf("%s\n",g_d_dwc4y_SIG.name);}
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_d_DIG_LEDPED[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_LEDPED[i].name);}
     if(g_d_DIG_LEDAMP[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_LEDAMP[i].name);}
     if(g_d_DIG_LEDWAV[i].isUsed()){nhists++; printf("%s\n",g_d_DIG_LEDWAV[i].name);}
@@ -232,7 +232,7 @@ void reset_dimhists(){
   g_d_dwc4x_SIG.Reset();
   g_d_dwc4y_SIG.Reset();
   //
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     g_d_DIG_LEDPED[i].Reset();
     g_d_DIG_LEDAMP[i].Reset();
     g_d_DIG_LEDWAV[i].Reset();
@@ -503,7 +503,7 @@ void MyMainFrame::Do2Ref(){
   if(g_d_dwc4x_SIG.isUsed())g_d_dwc4x_SIG_ref.Copy(g_d_dwc4x_SIG);
   if(g_d_dwc4y_SIG.isUsed())g_d_dwc4y_SIG_ref.Copy(g_d_dwc4y_SIG);
   //
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_d_DIG_LEDPED[i].isUsed())g_d_DIG_LEDPED_ref[i].Copy(g_d_DIG_LEDPED[i]);
     if(g_d_DIG_LEDAMP[i].isUsed())g_d_DIG_LEDAMP_ref[i].Copy(g_d_DIG_LEDAMP[i]);
     if(g_d_DIG_LEDWAV[i].isUsed())g_d_DIG_LEDWAV_ref[i].Copy(g_d_DIG_LEDWAV[i]);
@@ -755,7 +755,7 @@ void MyMainFrame::fillHistCombo(const char* cPatt, const char* cType){
   if(g_d_dwc3y_SIG.isUsed()){mh.insert(std::pair<std::string,int>(g_d_dwc3y_SIG.name, nhists)); nhists++;}
   if(g_d_dwc4y_SIG.isUsed()){mh.insert(std::pair<std::string,int>(g_d_dwc4y_SIG.name, nhists)); nhists++;}
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_d_DIG_LEDPED[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_LEDPED[i].name,nhists));nhists++;}
     if(g_d_DIG_LEDAMP[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_LEDAMP[i].name,nhists));nhists++;}
     if(g_d_DIG_LEDWAV[i].isUsed()){mh.insert(std::pair<std::string,int>(g_d_DIG_LEDWAV[i].name,nhists));nhists++;}

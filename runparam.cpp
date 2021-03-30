@@ -9,6 +9,7 @@ uint32_t VME_ADC3    =0;           // =0xC20000, ADC2, LECROY 1182
 uint32_t VME_CORBO   =0xF00000;    // =0xF00000, CORBO = CES RCB 8047
 uint32_t VME_CRB_CH  =0x000000;    // =0x000000, CORBO main channel
 uint32_t VME_CRB_CH2 =0x000000;    // =0x000001, CORBO secondary channel (pulse gen etc)
+uint32_t VME_CRB_CH3 =0x000000;    // =0x000002, CORBO channel used for a counter
 uint32_t VME_V259    =0xC00000;    // =0xC00000, pattern unit
 uint32_t VME_V1290   =0xCC0000;    // =0xCC0000 ,CAEN TDC with NIM inputs
 uint32_t VME_V260    =0;           // =0x00DD00, CAEN scaler
@@ -106,6 +107,7 @@ void runParam::reset(){
   vme_corbo   =0xF00000;    // =0xF00000, CORBO = CES RCB 8047
   vme_crb_ch  =0x000000;    // =0x000000, CORBO main channel
   vme_crb_ch2 =0x000001;    // =0x000001, CORBO secondary channel (pulse gen etc)
+  vme_crb_ch3 =0x000002;    // =0x000002, CORBO channel used for a counter
   vme_v259    =0xC00000;    // =0xC00000, pattern unit
   vme_v1290   =0xCC0000;    // =0xCC0000 ,CAEN TDC with NIM inputs
   vme_v812    =0;           // =0x880000, CAEN V812 constant fraction discriminator #1
@@ -113,12 +115,13 @@ void runParam::reset(){
   vme_crb_irq =3;        // VME IRQ ised in CORBO
   vme_crb_vec =0x85;      // interrpt vector ised in CORBO
   
-  digitizer_used=false;
-  dig_adjust_offsets=0;
-  dig_PED_summ=1; // values of dped in the PED DIG summary histo
-  dig_use_correction=1;
-  dig_posttrigger=5;
-  dig_frequency=0; // The digitizer sampling frequency code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
+  dig_PED_summ=1; // DIG PED summary plot: 0 -> AMP, otherwise PED
+  
+  digitizer_used=digitizer2_used=false;
+  dig_adjust_offsets=dig2_adjust_offsets=0;
+  dig_use_correction=dig2_use_correction=1;
+  dig_posttrigger=dig2_posttrigger=5;
+  dig_frequency=dig2_frequency=0; // The digitizer freq code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
   
   cx1[0]=-7046.; cx1[1]=140.; cx1[2]=7329.;
   cy1[0]=-7119.; cy1[1]= 30.; cy1[2]=7157.;
@@ -225,66 +228,76 @@ void runParam::write(const char* fnam){
     if(HVchan[i]>=0)fprintf(f,"HVCHAN %s %d %6.4f\n",&chnam[i][0],HVchan[i],HV[i]);
   }
   
-  fprintf(f,"\n//Pattern Unit (V259) connections\n");
-  fprintf(f,"PEDPATT %d\n",PEDpatt);
-  fprintf(f,"LEDPATT %d\n",LEDpatt);
-  fprintf(f,"SIGPATT %d\n",SIGpatt);
-  fprintf(f,"//\n");
-  
-  fprintf(f,"PEDPERIOD %f\n",PEDperiod);
-  fprintf(f,"LEDPERIOD %f\n",LEDperiod);
-  fprintf(f,"//\n");
-  
-  fprintf(f,"PRINTPERIOD %f\n",printperiod);
-  fprintf(f,"WRITEPERIOD %f\n",writeperiod);
-  fprintf(f,"CMDPERIOD %f\n",cmdperiod);
-  fprintf(f,"UPDPERIOD %f\n",updperiod);
-  fprintf(f,"//\n");
-  
-  fprintf(f,"WRITE_DATA %d\n",write_data);
-  fprintf(f,"//\n");
-  
   fprintf(f,"\n// LEDCHAN <iLED> <LED chan> <U_LED> \n");
   for(int i=0; i<sizeof(LEDchan)/sizeof(int); ++i){
     if(LEDchan[i]>=0)fprintf(f,"LEDCHAN %d %d %6.4f\n",i,LEDchan[i],ULED[i]);
   }
-  fprintf(f,"//\n");
   
-  if(vme_adc1   >0)fprintf(f,"VME_ADC1    0x%8.8X\n",vme_adc1   );
-  if(vme_adc2   >0)fprintf(f,"VME_ADC2    0x%8.8X\n",vme_adc2   );
-  if(vme_adc3   >0)fprintf(f,"VME_ADC3    0x%8.8X\n",vme_adc3   );
-  if(vme_corbo  >0)fprintf(f,"VME_CORBO   0x%8.8X\n",vme_corbo  );
+  fprintf(f,"\n// CONET nodes for VME, DIG and DIG2. VME should be always 0 (first node)\n");
+  fprintf(f,"VME_CONETNODE %d\n",vme_conetnode);
+  fprintf(f,"DIG_CONETNODE %d\n",dig_conetnode);
+  fprintf(f,"DIG2_CONETNODE %d\n",dig2_conetnode);
+  
+  fprintf(f,"\n// VME addresses. Must be in HEX \n");
+  fprintf(f,"VME_ADC1    0x%8.8X\n",vme_adc1   );
+  fprintf(f,"VME_ADC2    0x%8.8X\n",vme_adc2   );
+  fprintf(f,"VME_ADC3    0x%8.8X\n",vme_adc3   );
+  fprintf(f,"VME_CORBO   0x%8.8X\n",vme_corbo  );
   fprintf(f,"VME_CRB_CH  0x%X\n",vme_crb_ch );
   if(vme_crb_ch2!=vme_crb_ch)fprintf(f,"VME_CRB_CH2 0x%X\n",vme_crb_ch2);
-  if(vme_v259   >0)fprintf(f,"VME_V259    0x%8.8X\n",vme_v259   );
-  if(vme_v1290  >0)fprintf(f,"VME_V1290   0x%8.8X\n",vme_v1290  );
-  if(vme_v260   >0)fprintf(f,"VME_V260    0x%8.8X\n",vme_v260   );
-  if(vme_v812   >0)fprintf(f,"VME_V812    0x%8.8X\n",vme_v812   );
-  if(vme_v812_2 >0)fprintf(f,"VME_V812_2  0x%8.8X\n",vme_v812_2 );
+  if(vme_crb_ch3!=vme_crb_ch)fprintf(f,"VME_CRB_CH3 0x%X\n",vme_crb_ch3);
+  fprintf(f,"VME_V259    0x%8.8X\n",vme_v259   );
+  fprintf(f,"VME_V1290   0x%8.8X\n",vme_v1290  );
+  fprintf(f,"VME_V260    0x%8.8X\n",vme_v260   );
+  fprintf(f,"VME_V812    0x%8.8X\n",vme_v812   );
+  fprintf(f,"VME_V812_2  0x%8.8X\n",vme_v812_2 );
   fprintf(f,"VME_CRB_VEC 0x%X\n",vme_crb_vec);
   fprintf(f,"VME_CRB_IRQ 0x%X\n",vme_crb_irq);
-  fprintf(f,"//\n");
   
-  if(vme_conetnode >=0)fprintf(f,"VME_CONETNODE  %d\n",vme_conetnode);
-  if(dig_conetnode >=0)fprintf(f,"DIG_CONETNODE  %d\n",dig_conetnode);
-  if(dig2_conetnode >=0)fprintf(f,"DIG2_CONETNODE  %d\n",dig2_conetnode);
-  fprintf(f,"//\n");
+  fprintf(f,"\n// PED, LED and SIG patterns\n");
+  fprintf(f,"PEDPATT %d\n",PEDpatt);
+  fprintf(f,"LEDPATT %d\n",LEDpatt);
+  fprintf(f,"SIGPATT %d\n",SIGpatt);
+  
+  fprintf(f,"\n// LED and PED generators period, in seconds\n");
+  fprintf(f,"PEDPERIOD %f\n",PEDperiod);
+  fprintf(f,"LEDPERIOD %f\n",LEDperiod);
+  
+  fprintf(f,"\n// various periods\n");
+  fprintf(f,"PRINTPERIOD %f  // for printing stats\n",printperiod);
+  fprintf(f,"WRITEPERIOD %f  // not used for the moment\n",writeperiod);
+  fprintf(f,"CMDPERIOD %f    // checking for new DIM commands\n",cmdperiod);
+  fprintf(f,"UPDPERIOD %f    // updating DIM services\n",updperiod);
+  
+  fprintf(f,"\n// if !=0: write both ntuple and hists; if ==0, then only hists\n");
+  fprintf(f,"WRITE_DATA %d\n",write_data);
   
   fprintf(f,"\n// DATACONN <name> <type> <chan> (NB ADCmodule = ADCchan/8; ADCinput=ADCchan%8)\n");
   const char* typs[4]={"x","ADC","TDC","DIG"};
   for(int i=0; i<nchans; ++i){
     if(datatype[i]>=0)fprintf(f,"DATACONN %s %s %d\n",&chnam[i][0],typs[datatype[i]],datachan[i]);
   }
-  fprintf(f,"//\n");
   
+  fprintf(f,"\n// digitizer PED summary histo: MAX or PED (0->MAX, 1->pedestals)\n");
   fprintf(f,"DIG_PED_SUMM %d\n",dig_PED_summ);
-  fprintf(f,"DIG_ADJUST_OFFSETS %d\n",dig_adjust_offsets);
-  fprintf(f,"DIG_USE_CORRECTION %d\n",dig_use_correction);
-  fprintf(f,"DIG_POSTTRIGGER %f\n",dig_posttrigger);
-  fprintf(f,"// The digitizer sampling frequency code: 0->5GHz (default), 1->2.5GHz, 2->1GHz, 3->0.75GHz");
-  fprintf(f,"DIG_FREQUENCY %f\n",dig_frequency);
-  fprintf(f,"//\n");
   
+  fprintf(f,"\n// DIG PED adjust at start of run (<=0 - NO, >0 - required precision). Default 0 (NO)\n");
+  fprintf(f,"DIG_ADJUST_OFFSETS %d\n",dig_adjust_offsets);
+  fprintf(f,"DIG2_ADJUST_OFFSETS %d\n",dig2_adjust_offsets);
+  
+  fprintf(f,"\n// to use or not the factory corrections. 0-no, !=0-yes. Default yes\n");
+  fprintf(f,"DIG_USE_CORRECTION %d\n",dig_use_correction);
+  fprintf(f,"DIG2_USE_CORRECTION %d\n",dig2_use_correction);
+  
+  fprintf(f,"\n// Digitizer Post-Trigger value, in percents of the window width (0.2 ns*1024). Default 5\n");
+  fprintf(f,"DIG_POSTTRIGGER %f\n",dig_posttrigger);
+  fprintf(f,"DIG2_POSTTRIGGER %f\n",dig2_posttrigger);
+  
+  fprintf(f,"\n// digitizer sampling frequency code: 0->5GS/s (default), 1->2.5, 2->1, 3->0.75\n");
+  fprintf(f,"DIG_FREQUENCY %f\n",dig_frequency);
+  fprintf(f,"DIG2_FREQUENCY %f\n",dig2_frequency);
+  
+  fprintf(f,"\n// DWC calibration parameters\n");
   fprintf(f,"DWCX1PAR %8.1f %8.1f %8.1f\n", cx1[0], cx1[1], cx1[2]);
   fprintf(f,"DWCY1PAR %8.1f %8.1f %8.1f\n", cy1[0], cy1[1], cy1[2]);
   fprintf(f,"DWCX2PAR %8.1f %8.1f %8.1f\n", cx2[0], cx2[1], cx2[2]);
@@ -374,6 +387,9 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"VME_CRB_CH2")){
         if(nit>1 && goodhex(cn,&u))vme_crb_ch2=u;
       }
+      else if(0==strcmp(what,"VME_CRB_CH3")){
+        if(nit>1 && goodhex(cn,&u))vme_crb_ch3=u;
+      }
       else if(0==strcmp(what,"VME_V259")){
         if(nit>1 && goodhex(cn,&u))vme_v259=u;
       }
@@ -417,14 +433,26 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"DIG_ADJUST_OFFSETS")){
         if(nit>1 && nit1>0)dig_adjust_offsets=n;
       }
+      else if(0==strcmp(what,"DIG2_ADJUST_OFFSETS")){
+        if(nit>1 && nit1>0)dig2_adjust_offsets=n;
+      }
       else if(0==strcmp(what,"DIG_USE_CORRECTION")){
         if(nit>1 && nit1>0)dig_use_correction=n;
+      }
+      else if(0==strcmp(what,"DIG2_USE_CORRECTION")){
+        if(nit>1 && nit1>0)dig2_use_correction=n;
       }
       else if(0==strcmp(what,"DIG_POSTTRIGGER")){
         if(nit>1 && nit1>0)dig_posttrigger=n;
       }
+      else if(0==strcmp(what,"DIG2_POSTTRIGGER")){
+        if(nit>1 && nit1>0)dig2_posttrigger=n;
+      }
       else if(0==strcmp(what,"DIG_FREQUENCY")){
         if(nit>1 && nit1>0)dig_frequency=n;
+      }
+      else if(0==strcmp(what,"DIG2_FREQUENCY")){
+        if(nit>1 && nit1>0)dig2_frequency=n;
       }
       else if(0==strcmp(what,"DWC1XPAR")){
         if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}
@@ -461,6 +489,7 @@ void runParam::read(const char* fnam){
   VME_CORBO=   vme_corbo;
   VME_CRB_CH=  vme_crb_ch;
   VME_CRB_CH2= vme_crb_ch2;
+  VME_CRB_CH3= vme_crb_ch3;
   VME_V259=    vme_v259;
   VME_V1290=   vme_v1290;
   VME_V260=    vme_v260;
@@ -491,18 +520,36 @@ void runParam::read(const char* fnam){
     else if(3==datatype[ich]){// 4) digitizer
       //if( (datachan[ich]>=0 && datachan[ich]<16) || 20==datachan[ich] || 21==datachan[ich])digitizer_used=true;
       int JCH=datachan[ich];
-      if(datachan[ich]>=32 && datachan[ich]<=35){
-        JCH=(datachan[ich]-32)*9+8;
+      if(datachan[ich]>=0 && datachan[ich]<TR0DIG0CHAN){ // sig dig 1: 0-31
+        JCH=datachan[ich]+datachan[ich]/8;
         digitizer_used=true;
         used742[JCH]=1;
       }
-      else if(datachan[ich]>=0 && datachan[ich]<32){
-        JCH=datachan[ich]+datachan[ich]/8;
+      else if(datachan[ich]>=TR0DIG0CHAN && datachan[ich]<=TR1DIG1CHAN){ // trig dig 1: 32-35
+        JCH=(datachan[ich]-TR0DIG0CHAN)*9+8;
         digitizer_used=true;
+        used742[JCH]=1;
+      }
+      else if(datachan[ich]>=N742CHAN && datachan[ich]<N742CHAN+TR0DIG0CHAN){ // sig dig 2: 36-67
+        JCH=datachan[ich]+(datachan[ich]-N742CHAN)/8;
+        digitizer2_used=true;
+        used742[JCH]=1;
+      }
+      else if(datachan[ich]>=N742CHAN+TR0DIG0CHAN && datachan[ich]<=N742CHAN+TR1DIG1CHAN){ // trig dig 2: 68-71
+        JCH=(datachan[ich]-68)*9+44;
+        digitizer2_used=true;
         used742[JCH]=1;
       }
       else printf("%s WARNING: %s bad digitizer channel number %d\n",__func__,&chnam[ich][0],datachan[ich]);
     }
   }
   if(ADC1_used || ADC2_used || ADC3_used) ADC_used=true;
+  if(digitizer_used && dig_conetnode<0){
+    digitizer_used=false;
+    for(int j=0; j<N742CHAN; ++j)used742[j]=0;
+  }
+  if(digitizer2_used && dig2_conetnode<0){
+    digitizer2_used=false;
+    for(int j=N742CHAN; j<2*N742CHAN; ++j)used742[j]=0;
+  }
 }

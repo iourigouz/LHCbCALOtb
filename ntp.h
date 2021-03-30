@@ -36,12 +36,11 @@ extern int g_tTDCtrig;
 extern int g_nTDC[NTDCCHAN];
 extern int g_tTDC[NTDCCHAN][NTDCMAXHITS];
 
-extern int g_nDT5742[NDT5742CHAN];
-extern float* g_evdata742[NDT5742CHAN]; // intermediate destination for data pointers
-extern int g_used742[NDT5742CHAN];          // flag =1 for used channels, 0 otherwise
-extern float g_aDT5742[NDT5742CHAN][NDT5742SAMPL];
-extern int g_startCell[NDT5742CHAN];
-extern int g_trigTag[NDT5742CHAN];
+extern int g_n742[2*N742CHAN];
+extern float* g_evdata742[2*N742CHAN]; // intermediate destination for data pointers
+extern float g_a742[2*N742CHAN][N742SAMPL];
+extern int g_startCell[2*N742CHAN];
+extern int g_trigTag[2*N742CHAN];
 
 void reset_histos();
 void delete_histos();

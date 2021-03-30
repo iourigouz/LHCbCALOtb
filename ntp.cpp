@@ -55,12 +55,11 @@ int g_tTDCtrig;
 
 double g_x1, g_x2, g_x3, g_x4, g_y1, g_y2, g_y3, g_y4;
 
-int g_nDT5742[NDT5742CHAN];
-float* g_evdata742[NDT5742CHAN]; // intermediate destination for data pointers
-int g_used742[NDT5742CHAN];          // flag =1 for used channels, 0 otherwise
-float g_aDT5742[NDT5742CHAN][NDT5742SAMPL];
-int g_startCell[NDT5742CHAN];
-int g_trigTag[NDT5742CHAN];
+int g_n742[2*N742CHAN];
+float* g_evdata742[2*N742CHAN]; // intermediate destination for data pointers
+float g_a742[2*N742CHAN][N742SAMPL];
+int g_startCell[2*N742CHAN];
+int g_trigTag[2*N742CHAN];
 
 RUNPARAM g_rp;
 // end data
@@ -87,15 +86,15 @@ TH1I *g_hdwc1x_LED=0, *g_hdwc1y_LED=0, *g_hdwc2x_LED=0, *g_hdwc2y_LED=0;
 TH1I *g_hdwc3x_LED=0, *g_hdwc3y_LED=0, *g_hdwc4x_LED=0, *g_hdwc4y_LED=0;
 TH1I *g_hdwc1x_SIG=0, *g_hdwc1y_SIG=0, *g_hdwc2x_SIG=0, *g_hdwc2y_SIG=0; 
 TH1I *g_hdwc3x_SIG=0, *g_hdwc3y_SIG=0, *g_hdwc4x_SIG=0, *g_hdwc4y_SIG=0;
-TH1I *g_hDIG_LEDPED[NDT5742CHAN]={0};
-TH1I *g_hDIG_LEDAMP[NDT5742CHAN]={0};
-TH1I *g_hDIG_LEDWAV[NDT5742CHAN]={0};
-TH1I *g_hDIG_PEDPED[NDT5742CHAN]={0};
-TH1I *g_hDIG_PEDAMP[NDT5742CHAN]={0};
-TH1I *g_hDIG_PEDWAV[NDT5742CHAN]={0};
-TH1I *g_hDIG_SIGPED[NDT5742CHAN]={0};
-TH1I *g_hDIG_SIGAMP[NDT5742CHAN]={0};
-TH1I *g_hDIG_SIGWAV[NDT5742CHAN]={0};
+TH1I *g_hDIG_LEDPED[2*N742CHAN]={0};
+TH1I *g_hDIG_LEDAMP[2*N742CHAN]={0};
+TH1I *g_hDIG_LEDWAV[2*N742CHAN]={0};
+TH1I *g_hDIG_PEDPED[2*N742CHAN]={0};
+TH1I *g_hDIG_PEDAMP[2*N742CHAN]={0};
+TH1I *g_hDIG_PEDWAV[2*N742CHAN]={0};
+TH1I *g_hDIG_SIGPED[2*N742CHAN]={0};
+TH1I *g_hDIG_SIGAMP[2*N742CHAN]={0};
+TH1I *g_hDIG_SIGWAV[2*N742CHAN]={0};
 
 DIMSTAT g_d_status;
 DIMHIST *g_d_pattern=0;
@@ -111,15 +110,15 @@ DIMHIST *g_d_dwc1x_LED=0, *g_d_dwc1y_LED=0, *g_d_dwc2x_LED=0, *g_d_dwc2y_LED=0;
 DIMHIST *g_d_dwc3x_LED=0, *g_d_dwc3y_LED=0, *g_d_dwc4x_LED=0, *g_d_dwc4y_LED=0;
 DIMHIST *g_d_dwc1x_SIG=0, *g_d_dwc1y_SIG=0, *g_d_dwc2x_SIG=0, *g_d_dwc2y_SIG=0; 
 DIMHIST *g_d_dwc3x_SIG=0, *g_d_dwc3y_SIG=0, *g_d_dwc4x_SIG=0, *g_d_dwc4y_SIG=0;
-DIMHIST* g_d_DIG_LEDPED[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_LEDAMP[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_LEDWAV[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_PEDPED[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_PEDAMP[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_PEDWAV[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_SIGPED[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_SIGAMP[NDT5742CHAN]={0};
-DIMHIST* g_d_DIG_SIGWAV[NDT5742CHAN]={0};
+DIMHIST *g_d_DIG_LEDPED[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_LEDAMP[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_LEDWAV[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_PEDPED[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_PEDAMP[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_PEDWAV[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_SIGPED[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_SIGAMP[2*N742CHAN]={0};
+DIMHIST *g_d_DIG_SIGWAV[2*N742CHAN]={0};
 
 DimService* g_s_status=0;
 //
@@ -136,15 +135,15 @@ DimService *g_s_dwc1x_LED=0, *g_s_dwc1y_LED=0, *g_s_dwc2x_LED=0, *g_s_dwc2y_LED=
 DimService *g_s_dwc3x_LED=0, *g_s_dwc3y_LED=0, *g_s_dwc4x_LED=0, *g_s_dwc4y_LED=0;
 DimService *g_s_dwc1x_SIG=0, *g_s_dwc1y_SIG=0, *g_s_dwc2x_SIG=0, *g_s_dwc2y_SIG=0; 
 DimService *g_s_dwc3x_SIG=0, *g_s_dwc3y_SIG=0, *g_s_dwc4x_SIG=0, *g_s_dwc4y_SIG=0;
-DimService* g_s_DIG_LEDPED[NDT5742CHAN]={0};
-DimService* g_s_DIG_LEDAMP[NDT5742CHAN]={0};
-DimService* g_s_DIG_LEDWAV[NDT5742CHAN]={0};
-DimService* g_s_DIG_PEDPED[NDT5742CHAN]={0};
-DimService* g_s_DIG_PEDAMP[NDT5742CHAN]={0};
-DimService* g_s_DIG_PEDWAV[NDT5742CHAN]={0};
-DimService* g_s_DIG_SIGPED[NDT5742CHAN]={0};
-DimService* g_s_DIG_SIGAMP[NDT5742CHAN]={0};
-DimService* g_s_DIG_SIGWAV[NDT5742CHAN]={0};
+DimService *g_s_DIG_LEDPED[2*N742CHAN]={0};
+DimService *g_s_DIG_LEDAMP[2*N742CHAN]={0};
+DimService *g_s_DIG_LEDWAV[2*N742CHAN]={0};
+DimService *g_s_DIG_PEDPED[2*N742CHAN]={0};
+DimService *g_s_DIG_PEDAMP[2*N742CHAN]={0};
+DimService *g_s_DIG_PEDWAV[2*N742CHAN]={0};
+DimService *g_s_DIG_SIGPED[2*N742CHAN]={0};
+DimService *g_s_DIG_SIGAMP[2*N742CHAN]={0};
+DimService *g_s_DIG_SIGWAV[2*N742CHAN]={0};
 
 DimCommand* g_cmnd;
 //
@@ -186,16 +185,22 @@ void title_set_iev(TH1* h, int iev){
 
 int i2JCH(int i){
   int JCH=0;
-  if(i>=32&&i<=35)JCH=(i-32)*9+8;
-  else if(i>=0&&i<=31)JCH=i+i/8;
+  if(i>=0&&i<TR0DIG0CHAN)JCH=i+i/8;
+  else if(i>=TR0DIG0CHAN && i<N742CHAN) JCH=(i-TR0DIG0CHAN)*9+8;
+  else if(i>=N742CHAN && i<N742CHAN+TR0DIG0CHAN) JCH=i+(i-N742CHAN)/8;
+  else if(i>=N742CHAN+TR0DIG0CHAN && i<2*N742CHAN) JCH=(i-N742CHAN-TR0DIG0CHAN)*9+N742CHAN+8;
   return JCH;
 };
 
 int JCH2i(int JCH){
   int i=0;
-  if(JCH>=0&&JCH<=35){
-    if(8==JCH%9)i=32+JCH/9;
+  if(JCH>=0 && JCH<N742CHAN){
+    if(8==JCH%9)i=TR0DIG0CHAN+JCH/9;
     else i=JCH-JCH/9;
+  }
+  else if(JCH>=N742CHAN && JCH<2*N742CHAN){
+    if(8==JCH%9)i=N742CHAN+TR0DIG0CHAN+(JCH-N742CHAN)/9;
+    else i=JCH-(JCH-N742CHAN)/9;
   }
   return i;
 };
@@ -274,9 +279,12 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     gDirectory->mkdir("LED");
     gDirectory->cd("LED");
     //gDirectory->pwd();
-    if(g_rp.ADC_used)g_hsumm_ADC_LED=new TProfile("summ_LED_ADC", "summary ADC LED",nADCconns, 0,nADCconns, 0,4096,"S");
-    if(g_rp.TDC_used)g_hsumm_TDC_LED=new TProfile("summ_LED_TDC", "summary TDC LED",nTDCconns, 0,nTDCconns, -2e4,2e4,"S");
-    if(g_rp.digitizer_used)g_hsumm_DIG_LED=new TProfile("summ_LED_DIG", "summary Digitizer LED",nDIGconns, 0,nDIGconns, -4096,4096,"S");
+    if(g_rp.ADC_used)
+      g_hsumm_ADC_LED=new TProfile("summ_LED_ADC", "summary ADC LED",nADCconns, 0,nADCconns, 0,4096,"S");
+    if(g_rp.TDC_used)
+      g_hsumm_TDC_LED=new TProfile("summ_LED_TDC", "summary TDC LED",nTDCconns, 0,nTDCconns, -2e4,2e4,"S");
+    if(g_rp.digitizer_used || g_rp.digitizer2_used)
+      g_hsumm_DIG_LED=new TProfile("summ_LED_DIG", "summary Digitizer LED",nDIGconns, 0,nDIGconns, -4096,4096,"S");
     int iADC=0, iTDC=0, iDIG=0;
     for(int ich=0; ich<g_rp.nchans; ++ich){
       if(1==g_rp.datatype[ich]){// ADC
@@ -360,8 +368,10 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     gDirectory->mkdir("PED");
     gDirectory->cd("PED");
     //gDirectory->pwd();
-    if(g_rp.ADC_used)g_hsumm_ADC_PED=new TProfile("summ_PED_ADC", "summary ADC PED",nADCconns, 0,nADCconns, 0,4096,"S");
-    if(g_rp.digitizer_used)g_hsumm_DIG_PED=new TProfile("summ_PED_DIG", "summary Digitizer PED",nDIGconns, 0,nDIGconns, -4096,4096,"S");
+    if(g_rp.ADC_used)
+      g_hsumm_ADC_PED=new TProfile("summ_PED_ADC", "summary ADC PED",nADCconns, 0,nADCconns, 0,4096,"S");
+    if(g_rp.digitizer_used || g_rp.digitizer2_used)
+      g_hsumm_DIG_PED=new TProfile("summ_PED_DIG", "summary Digitizer PED",nDIGconns, 0,nDIGconns, -4096,4096,"S");
     iADC=iDIG=0;
     for(int ich=0; ich<g_rp.nchans; ++ich){
       if(1==g_rp.datatype[ich]){// ADC
@@ -395,9 +405,12 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     gDirectory->mkdir("SIG");
     gDirectory->cd("SIG");
     //gDirectory->pwd();
-    if(g_rp.ADC_used)g_hsumm_ADC_SIG=new TProfile("summ_SIG_ADC", "summary ADC SIG",nADCconns, 0,nADCconns, 0,4096,"S");
-    if(g_rp.TDC_used)g_hsumm_TDC_SIG=new TProfile("summ_SIG_TDC", "summary TDC SIG",nTDCconns, 0,nTDCconns, -2e4,2e4,"S");
-    if(g_rp.digitizer_used)g_hsumm_DIG_SIG=new TProfile("summ_SIG_DIG", "summary Digitizer SIG",nDIGconns, 0,nDIGconns, -4096,4096,"S");
+    if(g_rp.ADC_used)
+      g_hsumm_ADC_SIG=new TProfile("summ_SIG_ADC", "summary ADC SIG",nADCconns, 0,nADCconns, 0,4096,"S");
+    if(g_rp.TDC_used)
+      g_hsumm_TDC_SIG=new TProfile("summ_SIG_TDC", "summary TDC SIG",nTDCconns, 0,nTDCconns, -2e4,2e4,"S");
+    if(g_rp.digitizer_used || g_rp.digitizer2_used)
+      g_hsumm_DIG_SIG=new TProfile("summ_SIG_DIG", "summary Digitizer SIG",nDIGconns, 0,nDIGconns, -4096,4096,"S");
     iADC=iDIG=0;
     for(int ich=0; ich<g_rp.nchans; ++ich){
       if(1==g_rp.datatype[ich]){// ADC
@@ -501,16 +514,13 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
           g_ROOTtree->Branch(nam1,&g_tTDC[g_rp.datachan[i]][0],fmt);
         }
         else if(3==g_rp.datatype[i]){ // DIG
-          int JCH=g_rp.datachan[i];
-          if(g_rp.datachan[i]>=32 && g_rp.datachan[i]<=35)  JCH=(g_rp.datachan[i]-32)*9+8;
-          else if(g_rp.datachan[i]<32) JCH+=g_rp.datachan[i]/8;
-        
+          int JCH=i2JCH(g_rp.datachan[i]);
           sprintf(nam,"%s_nd%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
           sprintf(fmt,"%s/I",nam);
-          g_ROOTtree->Branch(nam,&g_nDT5742[JCH],fmt);
+          g_ROOTtree->Branch(nam,&g_n742[JCH],fmt);
           sprintf(nam1,"%s_ad%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
           sprintf(fmt,"%s[%s]/F",nam1,nam);
-          g_ROOTtree->Branch(nam1,&g_aDT5742[JCH][0],fmt);
+          g_ROOTtree->Branch(nam1,&g_a742[JCH][0],fmt);
           sprintf(nam,"%s_stcell%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
           sprintf(fmt,"%s/I",nam);
           g_ROOTtree->Branch(nam,&g_startCell[JCH],fmt);
@@ -574,21 +584,21 @@ void closeROOTfile(){
     if(g_hsumm_TDC_SIG)g_hsumm_TDC_SIG->Write();
     
     gDirectory->cd("../LED");
-    for(int i=0; i<NDT5742CHAN; ++i){
+    for(int i=0; i<2*N742CHAN; ++i){
       if(g_hDIG_LEDPED[i]) g_hDIG_LEDPED[i]->Write(); 
       if(g_hDIG_LEDAMP[i]) g_hDIG_LEDAMP[i]->Write(); 
       if(g_hDIG_LEDWAV[i]) g_hDIG_LEDWAV[i]->Write(); 
     }
     if(g_hsumm_DIG_LED)g_hsumm_DIG_LED->Write();
     gDirectory->cd("../PED");
-    for(int i=0; i<NDT5742CHAN; ++i){
+    for(int i=0; i<2*N742CHAN; ++i){
       if(g_hDIG_PEDPED[i]) g_hDIG_PEDPED[i]->Write(); 
       if(g_hDIG_PEDAMP[i]) g_hDIG_PEDAMP[i]->Write(); 
       if(g_hDIG_PEDWAV[i]) g_hDIG_PEDWAV[i]->Write(); 
     }
     if(g_hsumm_DIG_PED)g_hsumm_DIG_PED->Write();
     gDirectory->cd("../SIG");
-    for(int i=0; i<NDT5742CHAN; ++i){
+    for(int i=0; i<2*N742CHAN; ++i){
       if(g_hDIG_SIGPED[i]) g_hDIG_SIGPED[i]->Write(); 
       if(g_hDIG_SIGAMP[i]) g_hDIG_SIGAMP[i]->Write(); 
       if(g_hDIG_SIGWAV[i]) g_hDIG_SIGWAV[i]->Write(); 
@@ -613,7 +623,7 @@ void closeROOTfile(){
     g_hdwc3x_LED=g_hdwc3y_LED=g_hdwc4x_LED=g_hdwc4y_LED=0;
     g_hdwc1x_SIG=g_hdwc1y_SIG=g_hdwc2x_SIG=g_hdwc2y_SIG=0;
     g_hdwc3x_SIG=g_hdwc3y_SIG=g_hdwc4x_SIG=g_hdwc4y_SIG=0;
-    for(int i=0; i<NDT5742CHAN; ++i){
+    for(int i=0; i<2*N742CHAN; ++i){
       g_hDIG_LEDPED[i]=g_hDIG_LEDAMP[i]=g_hDIG_LEDWAV[i]=0;
       g_hDIG_PEDPED[i]=g_hDIG_PEDAMP[i]=g_hDIG_PEDWAV[i]=0;
       g_hDIG_SIGPED[i]=g_hDIG_SIGAMP[i]=g_hDIG_SIGWAV[i]=0; 
@@ -716,10 +726,8 @@ void fill_all(){
       }
     }
     
-    for(int JCH=0; JCH<NDT5742CHAN; ++JCH){ // loop over DIG data, channels 0-NDT5742CHSN
-      int i=JCH;                      // i is the channel # as in runparams (and X742 frontface)
-      if(8==JCH%9)i=32+JCH/9;         // JCH is the channel # as in X742 data
-      else i=JCH-JCH/9;
+    for(int JCH=0; JCH<2*N742CHAN; ++JCH){ // loop over DIG data, channels 0-2*N742CHAN
+      int i=JCH2i(JCH);                    // i is the channel # as in runparams (and X742 frontface)
       int ich=g_rp.findch("DIG",i);         // entry number in runparams
       const char *nam=0;
       int ibin=0, pol=0;
@@ -736,25 +744,25 @@ void fill_all(){
         }
         // determine ped from the first 25 samples
         //double dped=getped_742(25,g_evdata742[JCH]);
-        double dped=getped_742(25,&g_aDT5742[JCH][0]);
+        double dped=getped_742(25,&g_a742[JCH][0]);
         //
         // determine max and min from all samples except 10 last ones 
         // (for our DT5742, the last 10 samples are 10-20 ADC counts too high)
         double damp=0,dmin=0,dmax=0;
         if(777==pol){// positive polarity
-          //dmax=getmax_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
-          dmax=getmax_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
+          //dmax=getmax_742(g_n742[JCH]-10,g_evdata742[JCH]);
+          dmax=getmax_742(g_n742[JCH]-10,&g_a742[JCH][0]);
           damp=dmax-dped;
         }
         else if(222==pol){// bipolar signal
-          //dmax=getmax_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
-          dmax=getmax_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
-          dmin=getmin_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
+          //dmax=getmax_742(g_n742[JCH]-10,g_evdata742[JCH]);
+          dmax=getmax_742(g_n742[JCH]-10,&g_a742[JCH][0]);
+          dmin=getmin_742(g_n742[JCH]-10,&g_a742[JCH][0]);
           damp=dmax-dmin;
         }
         else{  // negative polarity
-          //dmin=getmin_742(g_nDT5742[JCH]-10,g_evdata742[JCH]);
-          dmin=getmin_742(g_nDT5742[JCH]-10,&g_aDT5742[JCH][0]);
+          //dmin=getmin_742(g_n742[JCH]-10,g_evdata742[JCH]);
+          dmin=getmin_742(g_n742[JCH]-10,&g_a742[JCH][0]);
           damp=dped-dmin;
         }
         char tit[1024];
@@ -764,7 +772,7 @@ void fill_all(){
           if(g_hDIG_PEDWAV[i]) {
             if( g_hDIG_PEDWAV[i]->GetEntries() <=1 ){
               g_hDIG_PEDWAV[i]->Reset();
-              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j) g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
+              for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
               title_set_iev(g_hDIG_PEDWAV[i], g_ievt);
             }
           }
@@ -777,7 +785,7 @@ void fill_all(){
           if(g_hDIG_LEDWAV[i]) {
             if( g_hDIG_LEDWAV[i]->GetEntries() <=1 ){
               g_hDIG_LEDWAV[i]->Reset();
-              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j) g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
+              for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
               title_set_iev(g_hDIG_LEDWAV[i], g_ievt);
             }
           }
@@ -789,7 +797,7 @@ void fill_all(){
           if(g_hDIG_SIGWAV[i]) {
             if( g_hDIG_SIGWAV[i]->GetEntries() <=1 ){
               g_hDIG_SIGWAV[i]->Reset();
-              for(int j=0; j<g_nDT5742[JCH] && j<1024; ++j) g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_aDT5742[JCH][j]);
+              for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
               title_set_iev(g_hDIG_SIGWAV[i], g_ievt);
             }
           }
@@ -986,7 +994,7 @@ void delete_histos(){
   if(g_hsumm_TDC_LED) { g_hsumm_TDC_LED->Delete(); g_hsumm_TDC_LED=0; }
   if(g_hsumm_TDC_SIG) { g_hsumm_TDC_SIG->Delete(); g_hsumm_TDC_SIG=0; }
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_hDIG_LEDPED[i]) { g_hDIG_LEDPED[i]->Delete(); g_hDIG_LEDPED[i]=0; }
     if(g_hDIG_LEDAMP[i]) { g_hDIG_LEDAMP[i]->Delete(); g_hDIG_LEDAMP[i]=0; }
     if(g_hDIG_LEDWAV[i]) { g_hDIG_LEDWAV[i]->Delete(); g_hDIG_LEDWAV[i]=0; }
@@ -1039,7 +1047,7 @@ void reset_histos(){
   if(g_hsumm_TDC_LED) g_hsumm_TDC_LED->Reset(); 
   if(g_hsumm_TDC_SIG) g_hsumm_TDC_SIG->Reset(); 
 
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_hDIG_LEDPED[i]) g_hDIG_LEDPED[i]->Reset(); 
     if(g_hDIG_LEDAMP[i]) g_hDIG_LEDAMP[i]->Reset(); 
     if(g_hDIG_LEDWAV[i]) g_hDIG_LEDWAV[i]->Reset(); 
@@ -1088,7 +1096,7 @@ void delete_dimHists(){
   if(g_d_summ_TDC_LED) { delete g_d_summ_TDC_LED; g_d_summ_TDC_LED=0; }
   if(g_d_summ_TDC_SIG) { delete g_d_summ_TDC_SIG; g_d_summ_TDC_SIG=0; }
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_d_DIG_LEDPED[i]) { delete g_d_DIG_LEDPED[i]; g_d_DIG_LEDPED[i]=0; }
     if(g_d_DIG_LEDAMP[i]) { delete g_d_DIG_LEDAMP[i]; g_d_DIG_LEDAMP[i]=0; }
     if(g_d_DIG_LEDWAV[i]) { delete g_d_DIG_LEDWAV[i]; g_d_DIG_LEDWAV[i]=0; }
@@ -1138,7 +1146,7 @@ void delete_dimservices(){
   if(g_s_summ_TDC_LED) { delete g_s_summ_TDC_LED; g_s_summ_TDC_LED=0; }
   if(g_s_summ_TDC_SIG) { delete g_s_summ_TDC_SIG; g_s_summ_TDC_SIG=0; }
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_s_DIG_LEDPED[i]) { delete g_s_DIG_LEDPED[i]; g_s_DIG_LEDPED[i]=0; }
     if(g_s_DIG_LEDAMP[i]) { delete g_s_DIG_LEDAMP[i]; g_s_DIG_LEDAMP[i]=0; }
     if(g_s_DIG_LEDWAV[i]) { delete g_s_DIG_LEDWAV[i]; g_s_DIG_LEDWAV[i]=0; }
@@ -1188,7 +1196,7 @@ void create_dimHists(){
   if(g_hsumm_TDC_LED) { g_d_summ_TDC_LED=new dimSummary(); g_d_summ_TDC_LED->fill_dimSummary(g_hsumm_TDC_LED); ndh++;}
   if(g_hsumm_TDC_SIG) { g_d_summ_TDC_SIG=new dimSummary(); g_d_summ_TDC_SIG->fill_dimSummary(g_hsumm_TDC_SIG); ndh++;}
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_hDIG_LEDPED[i]) { g_d_DIG_LEDPED[i]=new dimHist(); fill_dimHist(g_d_DIG_LEDPED[i],g_hDIG_LEDPED[i]); ndh++;}
     if(g_hDIG_LEDAMP[i]) { g_d_DIG_LEDAMP[i]=new dimHist(); fill_dimHist(g_d_DIG_LEDAMP[i],g_hDIG_LEDAMP[i]); ndh++;}
     if(g_hDIG_LEDWAV[i]) { g_d_DIG_LEDWAV[i]=new dimHist(); fill_dimHist(g_d_DIG_LEDWAV[i],g_hDIG_LEDWAV[i]); ndh++;}
@@ -1241,7 +1249,7 @@ void update_dimHists(){
   if(g_d_summ_TDC_LED) g_d_summ_TDC_LED->fill_dimSummary(g_hsumm_TDC_LED);
   if(g_d_summ_TDC_SIG) g_d_summ_TDC_SIG->fill_dimSummary(g_hsumm_TDC_SIG);
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_d_DIG_LEDPED[i]) fill_dimHist(g_d_DIG_LEDPED[i],g_hDIG_LEDPED[i]);
     if(g_d_DIG_LEDAMP[i]) fill_dimHist(g_d_DIG_LEDAMP[i],g_hDIG_LEDAMP[i]);
     if(g_d_DIG_LEDWAV[i]){
@@ -1379,7 +1387,7 @@ void create_dimservices(){
     nds++;
   }
   
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_d_DIG_LEDPED[i]){
       g_s_DIG_LEDPED[i]=new DimService(g_d_DIG_LEDPED[i]->name,g_d_DIG_LEDPED[i]->fmat,g_d_DIG_LEDPED[i],sizeof(*g_d_DIG_LEDPED[i]));
       nds++;
@@ -1479,7 +1487,7 @@ void update_dimservices(){
   if(g_s_summ_TDC_LED) g_s_summ_TDC_LED->updateService();
   if(g_s_summ_TDC_SIG) g_s_summ_TDC_SIG->updateService();
 
-  for(int i=0; i<NDT5742CHAN; ++i){
+  for(int i=0; i<2*N742CHAN; ++i){
     if(g_s_DIG_LEDPED[i]) (g_s_DIG_LEDPED[i])->updateService();
     if(g_s_DIG_LEDAMP[i]) (g_s_DIG_LEDAMP[i])->updateService();
     if(g_s_DIG_LEDWAV[i]) (g_s_DIG_LEDWAV[i])->updateService();

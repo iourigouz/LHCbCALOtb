@@ -8,8 +8,12 @@
 #define NADCCHAN 24
 #define NTDCCHAN 32
 #define NTDCMAXHITS 10
-#define NDT5742CHAN 36
-#define NDT5742SAMPL 2048
+#define N742CHAN 36
+#define N742SAMPL 2048
+#define TR0DIG0CHAN 32
+#define TR0DIG1CHAN 33
+#define TR1DIG0CHAN 34
+#define TR1DIG1CHAN 35
 
 #define MAXCHANS 100
 #define MAXNAMELENGTH 32
@@ -22,8 +26,9 @@ extern uint32_t VME_ADC1;     // 0xC30000   ADC1, LECROY 1182
 extern uint32_t VME_ADC2;     // 0xC10000   ADC2, LECROY 1182
 extern uint32_t VME_ADC3;     // 0xC20000   ADC3, LECROY 1182
 extern uint32_t VME_CORBO;    // 0xF00000   CORBO = CES RCB 8047
-extern uint32_t VME_CRB_CH;   // 0x000000   CORBO main channel
+extern uint32_t VME_CRB_CH;   // 0x000000   CORBO main channel (IRQ)
 extern uint32_t VME_CRB_CH2;  // 0x000001   CORBO secondary channel (pulse gen etc)
+extern uint32_t VME_CRB_CH3;  // 0x000002   CORBO channel used for a counter
 extern uint32_t VME_V259;     // 0xC00000   pattern unit
 extern uint32_t VME_V1290;    // 0xCC0000   CAEN TDC with NIM inputs
 extern uint32_t VME_V260;     // 0x00DD00   CAEN scaler
@@ -50,7 +55,7 @@ class runParam {
   double ULED[MAXLEDS];
   
   uint32_t vme_adc1, vme_adc2, vme_adc3;
-  uint32_t vme_corbo, vme_crb_ch, vme_crb_ch2, vme_crb_irq, vme_crb_vec;
+  uint32_t vme_corbo, vme_crb_ch, vme_crb_ch2, vme_crb_ch3, vme_crb_irq, vme_crb_vec;
   uint32_t vme_v259, vme_v1290, vme_v260, vme_v812, vme_v812_2;
   
   int vme_conetnode, dig_conetnode, dig2_conetnode;
@@ -67,13 +72,18 @@ class runParam {
   int polarity[MAXCHANS];  // 777-positive, otherwise negative
   int dig_PED_summ;         // DIG PED summary plot: 0 -> AMP, otherwise PED
   int dig_adjust_offsets;    // requests dig pedestal adjust at start of run (0->NO, !=0->YES)
-  int dig_use_correction; // whether to use or not the factory corrections
+  int dig2_adjust_offsets;    // requests dig pedestal adjust at start of run (0->NO, !=0->YES)
+  int dig_use_correction; // whether to use or not the factory corrections for digitizer#1
+  int dig2_use_correction; // whether to use or not the factory corrections for digitizer#2
   double dig_posttrigger; // The posttrigger delay value, in % of the window (204.8 ns), default=5
+  double dig2_posttrigger; // The posttrigger value for digitizer#2
   int dig_frequency; // The digitizer sampling frequency code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
+  int dig2_frequency; // The digitizer #2 frequency code
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;
   bool digitizer_used;
+  bool digitizer2_used;
   int used742[MAXCHANS];
   
   double cx1[3],cy1[3],cx2[3],cy2[3],cx3[3],cy3[3],cx4[3],cy4[3];
