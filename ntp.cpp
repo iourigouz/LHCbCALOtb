@@ -306,7 +306,10 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         nh1i++;
         sprintf(nam,"%s_LED_DIG_%2.2d_WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
         sprintf(tit,"%s (DIG%2.2d) LED WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
-        g_hDIG_LEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,204.8);
+        int ifreq=g_rp.dig_frequency;
+        if(g_rp.datachan[ich]>N742CHAN)ifreq=g_rp.dig2_frequency;
+        double freqs[4]={5,2.5,1,0.75}; // in GHz
+        g_hDIG_LEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,1024/freqs[ifreq]);
         nh1i++;
         g_hsumm_DIG_LED->GetXaxis()->SetBinLabel(iDIG+1,&g_rp.chnam[ich][0]);
         iDIG++;
@@ -393,7 +396,10 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         nh1i++;
         sprintf(nam,"%s_PED_DIG_%2.2d_WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
         sprintf(tit,"%s (DIG%2.2d) PED WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
-        g_hDIG_PEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,204.8);
+        int ifreq=g_rp.dig_frequency;
+        if(g_rp.datachan[ich]>N742CHAN)ifreq=g_rp.dig2_frequency;
+        double freqs[4]={5,2.5,1,0.75}; // in GHz
+        g_hDIG_PEDWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,1024/freqs[ifreq]);
         nh1i++;
         g_hsumm_DIG_PED->GetXaxis()->SetBinLabel(iDIG+1,&g_rp.chnam[ich][0]);
         iDIG++;
@@ -432,7 +438,10 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
         nh1i++;
         sprintf(nam,"%s_SIG_DIG_%2.2d_WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
         sprintf(tit,"%s (DIG%2.2d) SIG WAV",&g_rp.chnam[ich][0],g_rp.datachan[ich]);
-        g_hDIG_SIGWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,204.8);
+        int ifreq=g_rp.dig_frequency;
+        if(g_rp.datachan[ich]>N742CHAN)ifreq=g_rp.dig2_frequency;
+        double freqs[4]={5,2.5,1,0.75}; // in GHz
+        g_hDIG_SIGWAV[g_rp.datachan[ich]]=new TH1I(nam,tit,1024,0,1024/freqs[ifreq]);
         nh1i++;
         g_hsumm_DIG_SIG->GetXaxis()->SetBinLabel(iDIG+1,&g_rp.chnam[ich][0]);
         iDIG++;
