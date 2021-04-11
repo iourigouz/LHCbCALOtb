@@ -28,7 +28,7 @@
 
 #include "ntp.h"
 
-int getlastrunnumber(const char* task){
+int getlastrunnumber1(const char* task){
   // this is to find the last run number in the directory "task"
   // the file name format is task_<run_number>.root
   
@@ -64,6 +64,53 @@ int getlastrunnumber(const char* task){
   return retval;
 }
 
+const char* lastoccurrence(const char* str, const char* substr){
+  const char *ret, *pnt;
+  ret=pnt=strstr(str,substr);
+  while(pnt){
+    ret=pnt;
+    pnt=strstr(pnt+1,substr);
+  }
+  return ret;
+}
+
+int getlastrunnumber(const char* task){
+  // this is to find the last run number in the directory "task"
+  // the file name format is task_<run_number>.root
+  
+  //unsigned char isFile =0x8, isFolder =0x4;
+  DIR *dp;
+  struct dirent *dent;
+  int retval=-1;
+  
+  struct stat st;
+  if(0!=stat(task,&st)) return -1;
+  
+  if( (dp = opendir(task)) == NULL) {
+    fprintf(stderr, "%s: opendir error, %s: %s\n", __func__, task, strerror(errno));
+    return -1;
+  }
+  
+  char task_[256];
+  sprintf(task_,"%s_",task);
+  
+  errno=0;
+  while( (dent = readdir(dp)) ){
+    if(DT_REG==dent->d_type){
+      const char* task_pos=lastoccurrence(dent->d_name,task_);
+      const char* dotroot=lastoccurrence(dent->d_name,".root");
+      if(task_pos && dotroot){
+        if(0==strcmp(dotroot,".root")){
+          int j;
+          int nit=sscanf(task_pos+strlen(task_),"%d",&j);
+          if(1==nit && j>retval)retval=j;
+        }
+      }
+    }
+  }
+  return retval;
+}
+
 void ctrc_hdl(int s){
   printf("\nCaught signal %d, exiting...\n",s);
   g_exit=true;
@@ -72,12 +119,12 @@ void ctrc_hdl(int s){
 void ctrd_hdl(int s){
   printf("\nCaught signal %d\n",s);
   //g_exit=true;
-  g_print=(g_print+1)%2;
+  g_print=(g_print+1)%3;
 }
 
 void ctrz_hdl(int s){
   printf("\nCaught signal %d\n",s);
-  g_print=(g_print+1)%2;
+  g_print=(g_print+1)%3;
 }
 
 std::string exec(const char* cmd) {
@@ -115,6 +162,13 @@ void ctrl_init(){
   //-----------
 }
 
+double g_t_prev=0;
+int g_ievt_prev=0;
+int g_nped_prev=0;
+int g_nled_prev=0;
+int g_nsig_prev=0;
+uint32_t g_ungated_prev=0;
+
 int start_run(const char* task){
   if(g_running){
     printf("%s: already running\n",__func__);
@@ -125,7 +179,7 @@ int start_run(const char* task){
   
   char fnam_param[128];
   sprintf(fnam_param,"%s.param",task);
-    
+  
   g_rp.reset();
   g_rp.read(fnam_param);
   if(!g_rp.init){
@@ -183,6 +237,13 @@ int start_run(const char* task){
   openROOTfile(g_rootfilename, &g_rp);
   printf(" ... done\n");
   
+  if(g_rp.write_bin){
+    sprintf(g_binfilename,"%s/%s_%2.2d.bin",task,task,g_runnumber);
+    printf("%s: opening bin file %s ...",__func__,g_binfilename);
+    openBINfile_w(g_binfilename);
+    printf(" ... done\n");
+  }
+  
   dimsrv_createhistsvc();
   
   if(g_rp.digitizer_used){
@@ -198,7 +259,8 @@ int start_run(const char* task){
     }
   }
   
-  g_ievt=0, g_nped=0, g_nled=0, g_nsig=0;
+  g_ievt=g_nped=g_nled=g_nsig=0;
+  g_ievt_prev=g_nped_prev=g_nled_prev=g_nsig_prev=0;
   
   if(g_rp.digitizer_used){
     if(0!=digitizer_start()){printf("%s: error in digitizer_start\n",__func__); return 11; }
@@ -244,6 +306,7 @@ int stop_run(){
   dimsrv_deletehistsvc();
   
   closeROOTfile();
+  closeBINfile();
   printf(" Total %10.2f sec, %d events, %d ped, %d led, %d signal\n",
          g_t, g_ievt, g_nped, g_nled, g_nsig);
   
@@ -319,6 +382,9 @@ int read_all(){
   if(0!=digitizer2_clear())  dig2clearerr=true;
   
   fill_all();
+  if(g_rp.write_bin){
+    writeBINfile();
+  }
   
   g_ievt++;
   if(g_pattern==g_rp.SIGpatt)g_nsig++;
@@ -354,11 +420,22 @@ int read_all(){
 }
 
 void print_stat(){
-    uint32_t count;
-    vme_readCORBO_3(count);
-    int64_t ungated=count;
+  vme_readCORBO_3(g_ungated);
+  if(2==g_print){
+    printf("last %6.2fs: %4d events, %9d signal, %6d LED, %6d ped, %7d ungated\n", 
+           g_t-g_t_prev, g_ievt-g_ievt_prev, g_nsig-g_nsig_prev, g_nled-g_nled_prev, 
+           g_nped-g_nped_prev, g_ungated-g_ungated_prev);
+  }
+  else if(0==g_print || 1==g_print){
     printf("Total of %10.2fs, %9d events, %9d signal, %6d LED, %6d ped, %7d ungated\n", 
-           g_t, g_ievt, g_nsig, g_nled, g_nped, ungated);
+           g_t, g_ievt, g_nsig, g_nled, g_nped, g_ungated);
+  }
+  g_t_prev=g_t;
+  g_ievt_prev=g_ievt;
+  g_nped_prev=g_nped;
+  g_nled_prev=g_nled;
+  g_nsig_prev=g_nsig;
+  g_ungated_prev=g_ungated;
 }
 
 int main(int argc, char *argv[]){
@@ -441,6 +518,16 @@ int main(int argc, char *argv[]){
         if( (VME_WAIT_LED == (retwait & VME_WAIT_LED)) || (VME_WAIT_PED == (retwait & VME_WAIT_PED)) ){
           if(0!=vme_clearCORBO_2())   printf("%s ev%6d: WARNING error vme_clearCORBO_2\n",__func__,g_ievt);
         }
+        
+        if(0==g_print){
+          if( (1==g_ievt) || (0==g_ievt%1000) ) print_stat();
+        }
+        else{
+          if(dt_print>g_rp.printperiod){
+            tst0_print=tst_print;
+            print_stat();
+          }
+        }
       }
       else if(VME_WAIT_TIMEOUT==retwait){// timeout, probably out of spill - check what useful can I do
       } 
@@ -458,16 +545,6 @@ int main(int argc, char *argv[]){
       }
     }
     else usleep(5000);
-    
-    if(0==g_print){
-      if( (1==g_ievt) || (0==g_ievt%1000) ) print_stat();
-    }
-    else if(1==g_print){
-      if(dt_print>g_rp.printperiod){
-        tst0_print=tst_print;
-        print_stat();
-      }
-    }
     
     if(dt_write>g_rp.writeperiod){
       tst0_write=tst_write;

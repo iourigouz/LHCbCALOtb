@@ -317,7 +317,7 @@ int digitizer_read(){
     cnt++;
     if(cnt>1000)break;
   }
-  if(cnt>0 && cnt<=1000)printf("%s: event ready after %d ReadRegister(0xEF04)\n",__func__,cnt+1);
+  if(cnt>9 && cnt<=1000)printf("%s: event ready after %d ReadRegister(0xEF04)\n",__func__,cnt+1);
   else if(cnt>1000)printf("%s: WARNING NO EVENT after %d ReadRegister(0xEF04)!!!!\n",__func__,cnt+1);
   
   ret=CAEN_DGTZ_ReadData(DHandle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, DBuffer, &DBufferSize);
@@ -359,7 +359,6 @@ int digitizer_read(){
         g_n742[JCH]=(Event742->DataGroup[igr]).ChSize[ich];
         g_evdata742[JCH]=(Event742->DataGroup[igr]).DataChannel[ich];
         g_startCell[JCH]=(Event742->DataGroup[igr]).StartIndexCell;
-        g_trigTag[JCH]=(Event742->DataGroup[igr]).TriggerTimeTag;
         if(g_rp.used742[JCH]){
           for(int i=0; i<g_n742[JCH];++i){
             g_a742[JCH][i]=(g_evdata742[JCH])[i];
@@ -841,7 +840,6 @@ int digitizer2_read(){
         g_n742[JCH]=(Event742_2->DataGroup[igr]).ChSize[ich];
         g_evdata742[JCH]=(Event742_2->DataGroup[igr]).DataChannel[ich];
         g_startCell[JCH]=(Event742_2->DataGroup[igr]).StartIndexCell;
-        g_trigTag[JCH]=(Event742_2->DataGroup[igr]).TriggerTimeTag;
         if(g_rp.used742[JCH]){
           for(int i=0; i<g_n742[JCH];++i){
             g_a742[JCH][i]=(g_evdata742[JCH])[i];

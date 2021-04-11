@@ -10,13 +10,13 @@ uint32_t VME_CORBO   =0xF00000;    // =0xF00000, CORBO = CES RCB 8047
 uint32_t VME_CRB_CH  =0x000000;    // =0x000000, CORBO main channel
 uint32_t VME_CRB_CH2 =0x000000;    // =0x000001, CORBO secondary channel (pulse gen etc)
 uint32_t VME_CRB_CH3 =0x000000;    // =0x000002, CORBO channel used for a counter
+uint32_t VME_CRB_IRQ =3;        // VME IRQ ised in CORBO
+uint32_t VME_CRB_VEC =0x85;      // interrpt vector ised in CORBO
 uint32_t VME_V259    =0xC00000;    // =0xC00000, pattern unit
 uint32_t VME_V1290   =0xCC0000;    // =0xCC0000 ,CAEN TDC with NIM inputs
 uint32_t VME_V260    =0;           // =0x00DD00, CAEN scaler
 uint32_t VME_V812    =0;           // =0x880000, CAEN V812 constant fraction discriminator #1
 uint32_t VME_V812_2  =0;           // =0x990000, CAEN V812 constant fraction discriminator #2
-uint32_t VME_CRB_IRQ =3;        // VME IRQ ised in CORBO
-uint32_t VME_CRB_VEC =0x85;      // interrpt vector ised in CORBO
 
 
 bool goodhex(char* s, uint32_t *u){
@@ -73,33 +73,17 @@ void runParam::reset(){
   
   printperiod=writeperiod=cmdperiod=updperiod=1; // in seconds!!!
   
-  PEDperiod=LEDperiod=-1; // in seconds!!! negative==do not generate
+  write_ntp=1; // the default is to write a root tree with data into the root file
+  write_bin=0; // the default is NOT to write a binary file with data
   
   PEDpatt=1;
   LEDpatt=2;
   SIGpatt=4;
-  
-  write_data=1; // the default is to write a data file
-  
-  for(int i=0; i<MAXCHANS; ++i)HVchan[i]=-1;
+  PEDperiod=LEDperiod=-1; // in seconds!!! negative==do not generate
   
   nLEDs=0;
   for(int ich=0; ich<sizeof(LEDchan)/sizeof(int); ++ich)LEDchan[ich]=-1; //  all illegal
   memset(ULED,0,sizeof(ULED));
-  
-  nchans=0;
-  memset(chnam,0,sizeof(chnam));
-  for(int ich=0; ich<sizeof(HVchan)/sizeof(int); ++ich)HVchan[ich]=-1; //  all illegal
-  memset(datatype,0,sizeof(datatype));
-  memset(datachan,0,sizeof(datachan));
-  memset(polarity,0,sizeof(polarity));
-  
-  vme_conetnode=0;
-  dig_conetnode=1;
-  dig2_conetnode=-1; // not connected by default
-  
-  ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
-  
   
   vme_adc1    =0xC30000;    // =0xC30000, ADC1, LECROY 1182
   vme_adc2    =0;           // =0xC10000, ADC2, LECROY 1182
@@ -108,20 +92,37 @@ void runParam::reset(){
   vme_crb_ch  =0x000000;    // =0x000000, CORBO main channel
   vme_crb_ch2 =0x000001;    // =0x000001, CORBO secondary channel (pulse gen etc)
   vme_crb_ch3 =0x000002;    // =0x000002, CORBO channel used for a counter
+  vme_crb_irq =3;           // =3,    VME IRQ ised in CORBO
+  vme_crb_vec =0x85;        // =0x85, interrpt vector ised in CORBO
   vme_v259    =0xC00000;    // =0xC00000, pattern unit
-  vme_v1290   =0xCC0000;    // =0xCC0000 ,CAEN TDC with NIM inputs
+  vme_v1290   =0xCC0000;    // =0xCC0000, CAEN TDC with NIM inputs
+  vme_v260    =0x00DD00;    // =0xC00000, CAEN scaler
   vme_v812    =0;           // =0x880000, CAEN V812 constant fraction discriminator #1
   vme_v812_2  =0;           // =0x990000, CAEN V812 constant fraction discriminator #2
-  vme_crb_irq =3;        // VME IRQ ised in CORBO
-  vme_crb_vec =0x85;      // interrpt vector ised in CORBO
   
+  vme_conetnode=0;
+  dig_conetnode=1;
+  dig2_conetnode=-1; // not connected by default
+  
+  nchans=0;
+  memset(chnam,0,sizeof(chnam));
+  for(int ich=0; ich<sizeof(HVchan)/sizeof(int); ++ich)HVchan[ich]=-1; //  all illegal
+  memset(HV,0,sizeof(HV));
+  memset(datatype,0,sizeof(datatype));
+  memset(datachan,0,sizeof(datachan));
+  memset(polarity,0,sizeof(polarity));
   dig_PED_summ=1; // DIG PED summary plot: 0 -> AMP, otherwise PED
-  
-  digitizer_used=digitizer2_used=false;
   dig_adjust_offsets=dig2_adjust_offsets=0;
   dig_use_correction=dig2_use_correction=1;
   dig_posttrigger=dig2_posttrigger=5;
   dig_frequency=dig2_frequency=0; // The digitizer freq code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
+  
+  ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
+  digitizer_used=digitizer2_used=false;
+  memset(used742,0,sizeof(used742));
+  
+  evbuflen=0;
+  memset(evoffset,0,sizeof(evoffset));
   
   cx1[0]=-7046.; cx1[1]=140.; cx1[2]=7329.;
   cy1[0]=-7119.; cy1[1]= 30.; cy1[2]=7157.;
@@ -131,6 +132,7 @@ void runParam::reset(){
   cy3[0]=-6893.; cy3[1]= 86.; cy3[2]=6995.;
   cx4[0]=-7000.; cx4[1]=  0.; cx4[2]=7000.;
   cy4[0]=-7000.; cy4[1]=  0.; cy4[2]=7000.;
+  
 }
   
 void runParam::setChanHV(char* nam, int ich, double v){
@@ -270,7 +272,10 @@ void runParam::write(const char* fnam){
   fprintf(f,"UPDPERIOD %f    // updating DIM services\n",updperiod);
   
   fprintf(f,"\n// if !=0: write both ntuple and hists; if ==0, then only hists\n");
-  fprintf(f,"WRITE_DATA %d\n",write_data);
+  fprintf(f,"WRITE_NTP %d\n",write_ntp);
+  
+  fprintf(f,"\n// if !=0: write a binary file with data\n");
+  fprintf(f,"WRITE_BIN %d\n",write_bin);
   
   fprintf(f,"\n// DATACONN <name> <type> <chan> (NB ADCmodule = ADCchan/8; ADCinput=ADCchan%8)\n");
   const char* typs[4]={"x","ADC","TDC","DIG"};
@@ -360,10 +365,16 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"UPDPERIOD")){
         if(nit>1 && nit1>0)updperiod=n;
       }
-      else if(0==strcmp(what,"WRITE_DATA")){
-        write_data=1;
+      else if( (0==strcmp(what,"WRITE_NTP")) || (0==strcmp(what,"WRITE_DATA")) ){
+        write_ntp=1;
         if(nit>1 && nit1>0){
-          if(n==0)write_data=0;
+          if(n==0)write_ntp=0;
+        }
+      }
+      else if(0==strcmp(what,"WRITE_BIN")){
+        write_bin=0;
+        if(nit>1 && nit1>0){
+          if(n!=0)write_bin=1;
         }
       }
       else if(0==strcmp(what,"LEDCHAN")){
@@ -551,5 +562,58 @@ void runParam::read(const char* fnam){
   if(digitizer2_used && dig2_conetnode<0){
     digitizer2_used=false;
     for(int j=N742CHAN; j<2*N742CHAN; ++j)used742[j]=0;
+  }
+  
+  // // version 1: a larger buffer
+  // // filling the evoffset array - offsets in the binary buffer, in bytes
+  // // The buffer structure will be:
+  // // - t                    (double)   (offset=0)
+  // // - pattern              (int)      (offset=8)
+  // // then nchans times, depending on the connection type
+  // //   - if ADC: g_ADC (int)
+  // //   - if TDC: g_nTDC (int) + g_tTDC (10*int)
+  // //   - if DIG: g_n742 (int) + g_a742 (1024*float) +g_startcell (int)
+  
+  /*int lastoff=8, nextoff=12;
+  for(int ichan=0; ichan<nchans; ++i){
+    evoffset[ichan]=nextoff;
+    if(1==datatype[ichan]){ // ADC
+      nextoff+=4;
+    }
+    else if(2==datatype[ichan]){ // TDC
+      nextoff+=4*(1+NTDCMAXHITS);
+    }
+    else if(3==datatype[ichan]){ // DIG
+      nextoff+=4*(1+1024+1);
+    }
+  }
+  evbuflen=nextoff;*/
+  
+  // filling the evoffset array - offsets in the binary buffer, in bytes
+  // The buffer structure will be:
+  // - t                    (double)   (offset=0)
+  // - pattern              (int)      (offset=8)
+  // then nchans times, depending on the connection type
+  //   - if ADC: g_ADC (uint16_t)
+  //   - if TDC: g_nTDC (uint16_t) + g_tTDC (10*uint32_t)
+  //   - if DIG: g_startcell (uint16_t) + g_a742*10 (1024*uint16_t)
+  
+  int lastoff=8, nextoff=12;
+  for(int ichan=0; ichan<nchans; ++ichan){
+    evoffset[ichan]=nextoff;
+    if(1==datatype[ichan]){ // ADC
+      nextoff+=2;
+    }
+    else if(2==datatype[ichan]){ // TDC
+      nextoff+=2+4*NTDCMAXHITS;
+    }
+    else if(3==datatype[ichan]){ // DIG
+      nextoff+=2*(1+1024);
+    }
+  }
+  evbuflen=nextoff;
+  
+  if(write_bin){
+    printf("%s: BINARY file record size is %d bytes\n",__func__,evbuflen);
   }
 }

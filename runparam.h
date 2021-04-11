@@ -29,13 +29,13 @@ extern uint32_t VME_CORBO;    // 0xF00000   CORBO = CES RCB 8047
 extern uint32_t VME_CRB_CH;   // 0x000000   CORBO main channel (IRQ)
 extern uint32_t VME_CRB_CH2;  // 0x000001   CORBO secondary channel (pulse gen etc)
 extern uint32_t VME_CRB_CH3;  // 0x000002   CORBO channel used for a counter
+extern uint32_t VME_CRB_IRQ;  // 3          VME IRQ ised in CORBO
+extern uint32_t VME_CRB_VEC;  // 0x85       interrupt vector ised in CORBO
 extern uint32_t VME_V259;     // 0xC00000   pattern unit
 extern uint32_t VME_V1290;    // 0xCC0000   CAEN TDC with NIM inputs
 extern uint32_t VME_V260;     // 0x00DD00   CAEN scaler
 extern uint32_t VME_V812;     // 0x880000   CAEN V812 constant fraction discriminator #1
 extern uint32_t VME_V812_2;   // 0x990000   CAEN V812 constant fraction discriminator #2
-extern uint32_t VME_CRB_IRQ;  // 3          VME IRQ ised in CORBO
-extern uint32_t VME_CRB_VEC;  // 0x85       interrupt vector ised in CORBO
 
 // connections
 
@@ -45,7 +45,8 @@ class runParam {
   bool init;
   double printperiod, writeperiod, cmdperiod, updperiod;
   
-  int write_data;
+  int write_ntp; // whether to write a root tree with data
+  int write_bin; // whether to write a binary file with data
   
   int PEDpatt, LEDpatt, SIGpatt;
   double PEDperiod, LEDperiod; // in seconds!!!
@@ -85,6 +86,9 @@ class runParam {
   bool digitizer_used;
   bool digitizer2_used;
   int used742[MAXCHANS];
+  
+  int evbuflen;
+  int evoffset[MAXCHANS];
   
   double cx1[3],cy1[3],cx2[3],cy2[3],cx3[3],cy3[3],cx4[3],cy4[3];
   

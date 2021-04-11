@@ -24,6 +24,7 @@ int g_ievt=0;
 int g_nped=0;
 int g_nled=0;
 int g_nsig=0;
+uint32_t g_ungated=0;
 
 bool g_startrun=false;
 bool g_stoprun=false;
@@ -31,6 +32,7 @@ bool g_running=false;
 
 char g_config[128]="";
 char g_rootfilename[256]="";
+char g_binfilename[256]="";
 
 bool g_exit=false;
 
@@ -40,6 +42,7 @@ int g_print=0;
 
 TFile* g_ROOTfile=(TFile*)0;
 TTree* g_ROOTtree=(TTree*)0;
+FILE* g_binfile=(FILE*)0;
 
 // data
 int g_nTDCclear=0;
@@ -59,7 +62,8 @@ int g_n742[2*N742CHAN];
 float* g_evdata742[2*N742CHAN]; // intermediate destination for data pointers
 float g_a742[2*N742CHAN][N742SAMPL];
 int g_startCell[2*N742CHAN];
-int g_trigTag[2*N742CHAN];
+
+uint8_t g_evbuf[524288];
 
 RUNPARAM g_rp;
 // end data
@@ -182,8 +186,13 @@ void title_set_iev(TH1* h, int iev){
   sprintf(pev," ev# %d",iev);
   h->SetTitle(tit);
 }
+//     |    inputs         inputs         inputs           inputs         inputs         inputs        | triggers
+//     |-----------------------------------------------------------------------------------------------------------
+//   i | 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31|32 33 34 35
+//     |-----------------------------------------------------------------------------------------------------------
+// JCH | 0  1  2  3  4  5  6  7  9 10 11 12 13 14 15 16 18 19 20 21 22 23 24 25 27 28 29 30 31 32 33 34| 8 17 26 35
 
-int i2JCH(int i){
+int i2JCH(int i){// i is visible input#, JCH is the internal one
   int JCH=0;
   if(i>=0&&i<TR0DIG0CHAN)JCH=i+i/8;
   else if(i>=TR0DIG0CHAN && i<N742CHAN) JCH=(i-TR0DIG0CHAN)*9+8;
@@ -192,7 +201,7 @@ int i2JCH(int i){
   return JCH;
 };
 
-int JCH2i(int JCH){
+int JCH2i(int JCH){// i is visible input#, JCH is the internal one
   int i=0;
   if(JCH>=0 && JCH<N742CHAN){
     if(8==JCH%9)i=TR0DIG0CHAN+JCH/9;
@@ -407,7 +416,7 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     }
     gDirectory->cd("..");
     //gDirectory->pwd();
-
+    
     gDirectory->mkdir("SIG");
     gDirectory->cd("SIG");
     //gDirectory->pwd();
@@ -501,13 +510,13 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     
     printf("\n   %s INFO: %d TH1I histograms created\n",__func__,nh1i);
     
-    if(g_rp.write_data){
+    if(g_rp.write_ntp){
       g_ROOTtree=new TTree("DATA", "DATA");
       
       g_ROOTtree->Branch("t",&g_t, "t/D");
       g_ROOTtree->Branch("pattern",&g_pattern, "pattern/I");
       g_ROOTtree->Branch("tTDCtrig",&g_tTDCtrig, "tTDCtrig/I");
-  
+      
       for(int i=0 ; i<g_rp.nchans; ++i){
         if(1==g_rp.datatype[i]){ // ADC
           sprintf(nam,"%s_A%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
@@ -533,9 +542,6 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
           sprintf(nam,"%s_stcell%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
           sprintf(fmt,"%s/I",nam);
           g_ROOTtree->Branch(nam,&g_startCell[JCH],fmt);
-          sprintf(nam,"%s_trgtag%2.2d",&g_rp.chnam[i][0],g_rp.datachan[i]);
-          sprintf(fmt,"%s/I",nam);
-          g_ROOTtree->Branch(nam,&g_trigTag[JCH],fmt);
         }
       }
       if(g_dwc1left>=0 && g_dwc1right>=0)  g_ROOTtree->Branch("x1",&g_x1,"x1/D");
@@ -546,8 +552,9 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
       if(g_dwc3up>=0 && g_dwc3down>=0)     g_ROOTtree->Branch("y3",&g_y3,"y3/D");
       if(g_dwc4left>=0 && g_dwc4right>=0)  g_ROOTtree->Branch("x4",&g_x4,"x4/D");
       if(g_dwc4up>=0 && g_dwc4down>=0)     g_ROOTtree->Branch("y4",&g_y4,"y4/D");
+      printf("%s: DATA tree created\n",__func__);
     }
-    printf("%s: DATA tree created\n",__func__);
+    printf("%s: ROOT file created\n",__func__);
   }
 }
 
@@ -1584,4 +1591,113 @@ void update_dimservstatus(){
   strncpy(g_d_status.fnam,g_rootfilename,255); g_d_status.fnam[255]=0;
   
   if(g_s_status)g_s_status->updateService();
+}
+
+void pack_evbuf(uint8_t *evbuf){
+  memcpy(evbuf,&g_t,8);
+  memcpy(evbuf+8,&g_pattern,4);
+  int offs=0, JCH=0, i32=0;
+  for(int ichan=0; ichan<g_rp.nchans; ++ichan){
+    if(1==g_rp.datatype[ichan]){ // ADC
+      offs=g_rp.evoffset[ichan];
+      memcpy(evbuf+offs,&g_ADC[g_rp.datachan[ichan]],2);
+    }
+    else if(2==g_rp.datatype[ichan]){ // TDC
+      offs=g_rp.evoffset[ichan];
+      memcpy(evbuf+offs,&g_nTDC[g_rp.datachan[ichan]],2);
+      memcpy(evbuf+offs+2,&g_tTDC[g_rp.datachan[ichan]][0],4*NTDCMAXHITS);
+    }
+    else if(3==g_rp.datatype[ichan]){ // DIG
+      offs=g_rp.evoffset[ichan];
+      JCH=i2JCH(g_rp.datachan[ichan]);
+      memcpy(evbuf+offs,&g_startCell[JCH],2);
+      for(int i=0; i<1024; ++i){
+        i32=(int)(g_a742[JCH][i]*16);
+        if(i32>0xFFFF)i32=0xFFFF;
+        memcpy(evbuf+offs+2+i*2,&i32,2);
+      }
+    }
+  }
+}
+
+void unpack_evbuf(uint8_t *evbuf){
+  memcpy(&g_t,evbuf,8);
+  if(g_t<0 || g_t>1e6){
+    printf("%s: WARNING t=%f\n",__func__,g_t);
+  }
+  memcpy(&g_pattern,evbuf+8,4);
+  if(g_pattern!=g_rp.PEDpatt && g_pattern!=g_rp.LEDpatt && g_pattern!=g_rp.SIGpatt){
+    printf("%s: WARNING wrong pattern %d\n",__func__,g_pattern);
+  }
+  int inp=0, offs=0, JCH=0, i32=0;
+  for(int ichan=0; ichan<g_rp.nchans; ++ichan){
+    inp=g_rp.datachan[ichan];
+    offs=g_rp.evoffset[ichan];
+    if(1==g_rp.datatype[ichan]){ // ADC
+      g_ADC[inp]=0;
+      memcpy(&g_ADC[inp],evbuf+offs,2);
+      if(g_ADC[inp]<0 || g_ADC[inp]>4095){
+        printf("%s: WARNING bad ADC[%2.2d]=%d\n",__func__,inp,g_ADC[inp]);
+      }
+    }
+    else if(2==g_rp.datatype[ichan]){ // TDC
+      g_nTDC[inp]=0;
+      memcpy(&g_nTDC[inp],evbuf+offs,2);
+      if(g_nTDC[inp]<0 || g_nTDC[inp]>NTDCMAXHITS){
+        printf("%s: WARNING bad nTDC[%2.2d]=%d\n",__func__,inp,g_nTDC[inp]);
+      }
+      memcpy(&g_tTDC[inp][0],evbuf+offs+2,4*NTDCMAXHITS);
+      for(int i=0; i<g_nTDC[inp]; ++i){
+        if(g_tTDC[inp][i]<0 || g_tTDC[inp][i]>0x001FFFFF){
+          printf("%s: WARNING bad tTDC[%2.2d][%2.2d]=%d\n",__func__,inp,i,g_nTDC[inp]);
+        }
+      }
+    }
+    else if(3==g_rp.datatype[ichan]){ // DIG
+      JCH=i2JCH(inp);
+      g_startCell[JCH]=0;
+      memcpy(&g_startCell[JCH],evbuf+offs,2);
+      if(g_startCell[JCH]<0 || g_startCell[JCH]>1024){
+        printf("%s: WARNING bad DIG startCell[%2.2d]=%d\n",__func__,inp,g_startCell[JCH]);
+      }
+      g_n742[JCH]=1024;
+      g_evdata742[JCH]=&g_a742[JCH][0]; // fake, to avoid warnings
+      for(int i=0; i<1024; ++i){
+        memcpy(&i32,evbuf+offs+2+i*2,2);
+        g_a742[JCH][i]=((float)i32)/16.0;
+      }
+    }
+  }
+}
+
+void openBINfile_w(const char* filenam){
+  if(!g_binfile){
+    g_binfile=fopen(filenam,"wb");
+  }
+}
+
+void openBINfile_r(const char* filenam){
+  if(!g_binfile){
+    g_binfile=fopen(filenam,"rb");
+  }
+}
+
+void closeBINfile(){
+  if(g_binfile){
+    fclose(g_binfile);
+    g_binfile=(FILE*)0;
+  }
+}
+
+int writeBINfile(){
+  if(!g_binfile) return -1;
+  pack_evbuf(g_evbuf);
+  int nrec=fwrite(g_evbuf,g_rp.evbuflen,1,g_binfile);
+  return nrec;
+}
+
+int readBINfile(){
+  if(!g_binfile) return -1; 
+  int nrec=fread(g_evbuf,g_rp.evbuflen,1,g_binfile);
+  return nrec;
 }
