@@ -28,6 +28,8 @@ int vme_clearCORBO_2(); // clear BUSY VME_CRB_CH2
 int vme_setCORBO_2();   // set BUSY VME_CRB_CH2
 int vme_readCORBO_3(uint32_t& count);   // read event counter from VME_CRB_CH3
 int vme_clearCORBO_3(); // reset the counter
+int vme_readCORBO_4(uint32_t& count);   // read event counter from VME_CRB_CH3
+int vme_clearCORBO_4(); // reset the counter
 
 int vme_read_pattern();
 int vme_readADC();

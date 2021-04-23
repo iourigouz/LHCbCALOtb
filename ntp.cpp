@@ -64,6 +64,7 @@ float g_a742[2*N742CHAN][N742SAMPL];
 int g_startCell[2*N742CHAN];
 
 uint8_t g_evbuf[524288];
+uint8_t g_parbuf[135168];
 
 RUNPARAM g_rp;
 // end data
@@ -186,33 +187,6 @@ void title_set_iev(TH1* h, int iev){
   sprintf(pev," ev# %d",iev);
   h->SetTitle(tit);
 }
-//     |    inputs         inputs         inputs           inputs         inputs         inputs        | triggers
-//     |-----------------------------------------------------------------------------------------------------------
-//   i | 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31|32 33 34 35
-//     |-----------------------------------------------------------------------------------------------------------
-// JCH | 0  1  2  3  4  5  6  7  9 10 11 12 13 14 15 16 18 19 20 21 22 23 24 25 27 28 29 30 31 32 33 34| 8 17 26 35
-
-int i2JCH(int i){// i is visible input#, JCH is the internal one
-  int JCH=0;
-  if(i>=0&&i<TR0DIG0CHAN)JCH=i+i/8;
-  else if(i>=TR0DIG0CHAN && i<N742CHAN) JCH=(i-TR0DIG0CHAN)*9+8;
-  else if(i>=N742CHAN && i<N742CHAN+TR0DIG0CHAN) JCH=i+(i-N742CHAN)/8;
-  else if(i>=N742CHAN+TR0DIG0CHAN && i<2*N742CHAN) JCH=(i-N742CHAN-TR0DIG0CHAN)*9+N742CHAN+8;
-  return JCH;
-};
-
-int JCH2i(int JCH){// i is visible input#, JCH is the internal one
-  int i=0;
-  if(JCH>=0 && JCH<N742CHAN){
-    if(8==JCH%9)i=TR0DIG0CHAN+JCH/9;
-    else i=JCH-JCH/9;
-  }
-  else if(JCH>=N742CHAN && JCH<2*N742CHAN){
-    if(8==JCH%9)i=N742CHAN+TR0DIG0CHAN+(JCH-N742CHAN)/9;
-    else i=JCH-(JCH-N742CHAN)/9;
-  }
-  return i;
-};
 
 void openROOTfile(const char* filenam, const RUNPARAM* rp){
   delete_histos();
@@ -742,6 +716,7 @@ void fill_all(){
       }
     }
     
+    float signal[2048];
     for(int JCH=0; JCH<2*N742CHAN; ++JCH){ // loop over DIG data, channels 0-2*N742CHAN
       int i=JCH2i(JCH);                    // i is the channel # as in runparams (and X742 frontface)
       int ich=g_rp.findch("DIG",i);         // entry number in runparams
@@ -758,6 +733,8 @@ void fill_all(){
           g_rp.used742[JCH]=0;
           continue;
         }
+        bool int_corr_used = (i<N742CHAN && 0!=g_rp.dig_use_correction) 
+          || (i>=N742CHAN && 0!=g_rp.dig2_use_correction);
         // determine ped from the first 25 samples
         //double dped=getped_742(25,g_evdata742[JCH]);
         double dped=getped_742(25,&g_a742[JCH][0]);
@@ -788,7 +765,13 @@ void fill_all(){
           if(g_hDIG_PEDWAV[i]) {
             if( g_hDIG_PEDWAV[i]->GetEntries() <=1 ){
               g_hDIG_PEDWAV[i]->Reset();
-              for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
+              if(!int_corr_used && g_rp.dig_calibs_inited[JCH]){
+                apply_digitizer_calibs_a(JCH,g_startCell[JCH],&g_a742[JCH][0],signal);
+                for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_PEDWAV[i]->SetBinContent(j+1,signal[j]);
+              }
+              else{
+                for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_PEDWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
+              }
               title_set_iev(g_hDIG_PEDWAV[i], g_ievt);
             }
           }
@@ -801,7 +784,13 @@ void fill_all(){
           if(g_hDIG_LEDWAV[i]) {
             if( g_hDIG_LEDWAV[i]->GetEntries() <=1 ){
               g_hDIG_LEDWAV[i]->Reset();
-              for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
+              if(!int_corr_used && g_rp.dig_calibs_inited[JCH]){
+                apply_digitizer_calibs_a(JCH,g_startCell[JCH],&g_a742[JCH][0],signal);
+                for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_LEDWAV[i]->SetBinContent(j+1,signal[j]);
+              }
+              else{
+                for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_LEDWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
+              }
               title_set_iev(g_hDIG_LEDWAV[i], g_ievt);
             }
           }
@@ -813,7 +802,13 @@ void fill_all(){
           if(g_hDIG_SIGWAV[i]) {
             if( g_hDIG_SIGWAV[i]->GetEntries() <=1 ){
               g_hDIG_SIGWAV[i]->Reset();
-              for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
+              if(!int_corr_used && g_rp.dig_calibs_inited[JCH]){
+                apply_digitizer_calibs_a(JCH,g_startCell[JCH],&g_a742[JCH][0],signal);
+                for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_SIGWAV[i]->SetBinContent(j+1,signal[j]);
+              }
+              else{
+                for(int j=0; j<g_n742[JCH] && j<1024; ++j) g_hDIG_SIGWAV[i]->SetBinContent(j+1,g_a742[JCH][j]);
+              }
               title_set_iev(g_hDIG_SIGWAV[i], g_ievt);
             }
           }
@@ -1213,19 +1208,67 @@ void create_dimHists(){
   if(g_hsumm_TDC_SIG) { g_d_summ_TDC_SIG=new dimSummary(); g_d_summ_TDC_SIG->fill_dimSummary(g_hsumm_TDC_SIG); ndh++;}
   
   for(int i=0; i<2*N742CHAN; ++i){
-    if(g_hDIG_LEDPED[i]) { g_d_DIG_LEDPED[i]=new dimHist(); fill_dimHist(g_d_DIG_LEDPED[i],g_hDIG_LEDPED[i]); ndh++;}
-    if(g_hDIG_LEDAMP[i]) { g_d_DIG_LEDAMP[i]=new dimHist(); fill_dimHist(g_d_DIG_LEDAMP[i],g_hDIG_LEDAMP[i]); ndh++;}
-    if(g_hDIG_LEDWAV[i]) { g_d_DIG_LEDWAV[i]=new dimHist(); fill_dimHist(g_d_DIG_LEDWAV[i],g_hDIG_LEDWAV[i]); ndh++;}
-    if(g_hDIG_PEDPED[i]) { g_d_DIG_PEDPED[i]=new dimHist(); fill_dimHist(g_d_DIG_PEDPED[i],g_hDIG_PEDPED[i]); ndh++;}
-    if(g_hDIG_PEDAMP[i]) { g_d_DIG_PEDAMP[i]=new dimHist(); fill_dimHist(g_d_DIG_PEDAMP[i],g_hDIG_PEDAMP[i]); ndh++;}
-    if(g_hDIG_PEDWAV[i]) { g_d_DIG_PEDWAV[i]=new dimHist(); fill_dimHist(g_d_DIG_PEDWAV[i],g_hDIG_PEDWAV[i]); ndh++;}
-    if(g_hDIG_SIGPED[i]) { g_d_DIG_SIGPED[i]=new dimHist(); fill_dimHist(g_d_DIG_SIGPED[i],g_hDIG_SIGPED[i]); ndh++;}
-    if(g_hDIG_SIGAMP[i]) { g_d_DIG_SIGAMP[i]=new dimHist(); fill_dimHist(g_d_DIG_SIGAMP[i],g_hDIG_SIGAMP[i]); ndh++;}
-    if(g_hDIG_SIGWAV[i]) { g_d_DIG_SIGWAV[i]=new dimHist(); fill_dimHist(g_d_DIG_SIGWAV[i],g_hDIG_SIGWAV[i]); ndh++;}
+    if(g_hDIG_LEDPED[i]) { 
+      g_d_DIG_LEDPED[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_LEDPED[i],g_hDIG_LEDPED[i]); 
+      ndh++;
+    }
+    if(g_hDIG_LEDAMP[i]) { 
+      g_d_DIG_LEDAMP[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_LEDAMP[i],g_hDIG_LEDAMP[i]); 
+      ndh++;
+    }
+    if(g_hDIG_LEDWAV[i]) { 
+      g_d_DIG_LEDWAV[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_LEDWAV[i],g_hDIG_LEDWAV[i]); 
+      ndh++;
+    }
+    if(g_hDIG_PEDPED[i]) { 
+      g_d_DIG_PEDPED[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_PEDPED[i],g_hDIG_PEDPED[i]); 
+      ndh++;
+    }
+    if(g_hDIG_PEDAMP[i]) { 
+      g_d_DIG_PEDAMP[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_PEDAMP[i],g_hDIG_PEDAMP[i]); 
+      ndh++;
+    }
+    if(g_hDIG_PEDWAV[i]) { 
+      g_d_DIG_PEDWAV[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_PEDWAV[i],g_hDIG_PEDWAV[i]); 
+      ndh++;
+    }
+    if(g_hDIG_SIGPED[i]) { 
+      g_d_DIG_SIGPED[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_SIGPED[i],g_hDIG_SIGPED[i]); 
+      ndh++;
+    }
+    if(g_hDIG_SIGAMP[i]) { 
+      g_d_DIG_SIGAMP[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_SIGAMP[i],g_hDIG_SIGAMP[i]); 
+      ndh++;
+    }
+    if(g_hDIG_SIGWAV[i]) { 
+      g_d_DIG_SIGWAV[i]=new dimHist(); 
+      fill_dimHist(g_d_DIG_SIGWAV[i],g_hDIG_SIGWAV[i]); 
+      ndh++;
+    }
   }
-  if(g_hsumm_DIG_PED) { g_d_summ_DIG_PED=new dimSummary(); g_d_summ_DIG_PED->fill_dimSummary(g_hsumm_DIG_PED); ndh++;}
-  if(g_hsumm_DIG_LED) { g_d_summ_DIG_LED=new dimSummary(); g_d_summ_DIG_LED->fill_dimSummary(g_hsumm_DIG_LED); ndh++;}
-  if(g_hsumm_DIG_SIG) { g_d_summ_DIG_SIG=new dimSummary(); g_d_summ_DIG_SIG->fill_dimSummary(g_hsumm_DIG_SIG); ndh++;}
+  if(g_hsumm_DIG_PED) { 
+    g_d_summ_DIG_PED=new dimSummary(); 
+    g_d_summ_DIG_PED->fill_dimSummary(g_hsumm_DIG_PED); 
+    ndh++;
+  }
+  if(g_hsumm_DIG_LED) { 
+    g_d_summ_DIG_LED=new dimSummary(); 
+    g_d_summ_DIG_LED->fill_dimSummary(g_hsumm_DIG_LED); 
+    ndh++;
+  }
+  if(g_hsumm_DIG_SIG) { 
+    g_d_summ_DIG_SIG=new dimSummary(); 
+    g_d_summ_DIG_SIG->fill_dimSummary(g_hsumm_DIG_SIG); 
+    ndh++;
+  }
   
   printf("   %s INFO: %d DIMhists created\n",__func__,ndh);
 }
@@ -1670,16 +1713,46 @@ void unpack_evbuf(uint8_t *evbuf){
   }
 }
 
-void openBINfile_w(const char* filenam){
+int openBINfile_w(const char* filenam){
+  // fill the par buffer
+  FILE* fparw=fmemopen(g_parbuf,sizeof(g_parbuf),"w");
+  g_rp.writestream(fparw);
+  //
   if(!g_binfile){
     g_binfile=fopen(filenam,"wb");
+    if(!g_binfile)return -1;
   }
+  else rewind(g_binfile);
+  
+  // write the header with params
+  int nrec=fwrite(g_parbuf,sizeof(g_parbuf),1,g_binfile);
+  if(nrec!=1){
+    fclose(g_binfile);
+    g_binfile=(FILE*)0;
+    return -2;
+  }
+  else return 0;
 }
 
-void openBINfile_r(const char* filenam){
+int openBINfile_r(const char* filenam){
   if(!g_binfile){
     g_binfile=fopen(filenam,"rb");
+    if(!g_binfile)return -1;
   }
+  else rewind(g_binfile);
+  
+  // read the header with params
+  int nrec=fread(g_parbuf, sizeof(g_parbuf), 1, g_binfile);
+  if(nrec!=1){
+    fclose(g_binfile);
+    g_binfile=(FILE*)0;
+    return -2;
+  }
+  // read the params from the buffer
+  g_rp.reset();
+  FILE* fparr=fmemopen(g_parbuf,sizeof(g_parbuf),"r");
+  g_rp.readstream(fparr);
+  return 0;
 }
 
 void closeBINfile(){
@@ -1701,3 +1774,42 @@ int readBINfile(){
   int nrec=fread(g_evbuf,g_rp.evbuflen,1,g_binfile);
   return nrec;
 }
+
+void rewind_binfile(){
+  rewind(g_binfile);
+}
+
+void apply_digitizer_calibs(int JCH, int istart, float *raw, float *tims, float *volts){
+  if(g_rp.dig_calibs_inited[JCH]){
+    double tinc=0;
+    for(int isampl=0; isampl<1024; ++isampl){
+      int icell=(isampl+istart)%1024;
+      double v = g_rp.dig_p0[JCH][icell] + g_rp.dig_p1[JCH][icell] * (raw[isampl]-g_rp.dig_p2[JCH][icell]);
+      v = g_rp.dig_pa0[JCH][isampl] + g_rp.dig_pa1[JCH][isampl] * (v-g_rp.dig_pa2[JCH][isampl]);
+      tims[isampl]=tinc;
+      volts[isampl]=(v+0.5)*4096;
+      tinc+=g_rp.dig_timev[JCH][icell];
+    }
+    int index=(1024-istart)%1024;
+    float tcell0=tims[index]-0.2*index;
+    for(int isampl=0; isampl<1024; ++isampl)tims[isampl]-=tcell0;
+  }
+  else{
+    memcpy(volts,raw,1024*sizeof(float));
+  }
+}
+
+void apply_digitizer_calibs_a(int JCH, int istart, float *raw, float *volts){
+  if(g_rp.dig_calibs_inited[JCH]){
+    for(int isampl=0; isampl<1024; ++isampl){
+      int icell=(isampl+istart)%1024;
+      double v = g_rp.dig_p0[JCH][icell] + g_rp.dig_p1[JCH][icell] * (raw[isampl]-g_rp.dig_p2[JCH][icell]);
+      v = g_rp.dig_pa0[JCH][isampl] + g_rp.dig_pa1[JCH][isampl] * (v-g_rp.dig_pa2[JCH][isampl]);
+      volts[isampl]=(v+0.5)*4096;
+    }
+  }
+  else{
+    memcpy(volts,raw,1024*sizeof(float));
+  }
+}
+

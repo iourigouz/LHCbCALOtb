@@ -29,6 +29,7 @@ extern uint32_t VME_CORBO;    // 0xF00000   CORBO = CES RCB 8047
 extern uint32_t VME_CRB_CH;   // 0x000000   CORBO main channel (IRQ)
 extern uint32_t VME_CRB_CH2;  // 0x000001   CORBO secondary channel (pulse gen etc)
 extern uint32_t VME_CRB_CH3;  // 0x000002   CORBO channel used for a counter
+extern uint32_t VME_CRB_CH4;  // 0x000003   CORBO channel used for a counter
 extern uint32_t VME_CRB_IRQ;  // 3          VME IRQ ised in CORBO
 extern uint32_t VME_CRB_VEC;  // 0x85       interrupt vector ised in CORBO
 extern uint32_t VME_V259;     // 0xC00000   pattern unit
@@ -56,7 +57,7 @@ class runParam {
   double ULED[MAXLEDS];
   
   uint32_t vme_adc1, vme_adc2, vme_adc3;
-  uint32_t vme_corbo, vme_crb_ch, vme_crb_ch2, vme_crb_ch3, vme_crb_irq, vme_crb_vec;
+  uint32_t vme_corbo, vme_crb_ch, vme_crb_ch2, vme_crb_ch3, vme_crb_ch4, vme_crb_irq, vme_crb_vec;
   uint32_t vme_v259, vme_v1290, vme_v260, vme_v812, vme_v812_2;
   
   int vme_conetnode, dig_conetnode, dig2_conetnode;
@@ -80,6 +81,8 @@ class runParam {
   double dig2_posttrigger; // The posttrigger value for digitizer#2
   int dig_frequency; // The digitizer sampling frequency code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
   int dig2_frequency; // The digitizer #2 frequency code
+  char dig_calib_path[128];
+  char dig2_calib_path[128];
   
   bool ADC1_used, ADC2_used, ADC3_used, ADC_used;
   bool TDC_used;
@@ -90,7 +93,18 @@ class runParam {
   int evbuflen;
   int evoffset[MAXCHANS];
   
+  // DWC calibration
   double cx1[3],cy1[3],cx2[3],cy2[3],cx3[3],cy3[3],cx4[3],cy4[3];
+  
+  //---------------digitizer calibration coefficients of Vincenzo ------------
+  double dig_p0[2*N742CHAN][1024]; // coefficients for cell calibration
+  double dig_p1[2*N742CHAN][1024]; // coefficients for cell calibration
+  double dig_p2[2*N742CHAN][1024]; // coefficients for cell calibration
+  double dig_pa0[2*N742CHAN][1024]; // coefficients for sample calibration
+  double dig_pa1[2*N742CHAN][1024]; // coefficients for sample calibration
+  double dig_pa2[2*N742CHAN][1024]; // coefficients for sample calibration
+  double dig_timev[2*N742CHAN][1024];// cell time widths
+  int dig_calibs_inited[2*N742CHAN]; // initialized or not
   
  public:
   runParam();
@@ -99,12 +113,23 @@ class runParam {
   void setChanHV(char* nam, int ich, double v);
   void setLED(int iLED, int ich, double v);
   void setChanDataConn(char* nam, char* typ, int ich);
+  void writestream(FILE* f);
   void write(const char* fnam);
+  void readstream(FILE* f);
   void read(const char* fnam);
   int findch(const char* nam);
   int findch(const char* typ, int ch);
+
+  int read_digitizer_calibs(const char* path, int ifreq, int JCH);
+  void digitizer_calib_init();
+  void digitizer2_calib_init();
+
 };
 
 typedef runParam RUNPARAM;
 
 extern RUNPARAM g_rp;
+
+int i2JCH(int i);
+int JCH2i(int JCH);
+

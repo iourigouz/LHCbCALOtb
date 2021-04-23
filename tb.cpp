@@ -187,6 +187,15 @@ int start_run(const char* task){
     return 2;
   }
   
+  /*FILE* fparw=fmemopen(g_parbuf,sizeof(g_parbuf),"w");
+  g_rp.writestream(fparw);
+  g_rp.reset();
+  FILE* fparr=fmemopen(g_parbuf,sizeof(g_parbuf),"r");
+  g_rp.readstream(fparr);
+  char fnam_param_test[256];
+  sprintf(fnam_param_test,"%s/%s_%2.2d_test.param",task,task,g_runnumber);
+  g_rp.write(fnam_param_test);*/  
+  
   if(0==strcmp(g_config,"on") ||
      0==strcmp(g_config,"off")
      ) return 0;
@@ -240,8 +249,9 @@ int start_run(const char* task){
   if(g_rp.write_bin){
     sprintf(g_binfilename,"%s/%s_%2.2d.bin",task,task,g_runnumber);
     printf("%s: opening bin file %s ...",__func__,g_binfilename);
-    openBINfile_w(g_binfilename);
-    printf(" ... done\n");
+    int res=openBINfile_w(g_binfilename);
+    if(res!=0)printf("%s: ERROR opening %s to write!!!\n",__func__,g_binfilename);
+    else printf(" ... done\n");
   }
   
   dimsrv_createhistsvc();

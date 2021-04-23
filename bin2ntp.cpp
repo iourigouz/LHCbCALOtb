@@ -223,19 +223,36 @@ int main(int argc, char *argv[]){
   
   char fnam_param[256];
   sprintf(fnam_param,"%s/%s_%2.2d.param",g_config,g_config,g_runnumber);
-  if(0!=stat(fnam_param,&st)){
-    printf("param file does not exist, stop.\n");
-    return 0;
-  }
-  g_rp.reset();
-  g_rp.read(fnam_param);
-  if(!g_rp.init){
-    printf("%s: invalid config.\n",__func__);
-    return 2;
-  }
-  g_rp.write_ntp=1; // will write an ntuple
-  g_rp.write_bin=0; // and not a bin file!
   
+  printf("%s: opening bin file %s for read ...",__func__,g_binfilename);
+  int res=openBINfile_r(g_binfilename);
+  if(0!=res){
+    printf(" ... ERROR, stop.\n");
+    return 1;
+  }
+  else printf(" ... done\n");
+  //
+  if(!g_rp.init){ // the header with run params is invalid
+    printf("%s: invalid param record in %s, will now try a param file\n",__func__,g_binfilename);
+    if(0!=stat(fnam_param,&st)){
+      printf("param file does not exist, stop.\n");
+      return 0;
+    }
+    g_rp.reset();
+    g_rp.read(fnam_param);
+    if(!g_rp.init){
+      printf("%s: invalid config.\n",__func__);
+      return 2;
+    }
+    // now rewind the bin file to the beginning
+    rewind_binfile();
+  }
+  //
+  if(0!=stat(fnam_param,&st)){
+    printf("%s: %s not found, creating\n",__func__,fnam_param);
+    g_rp.write(fnam_param);
+  }
+  //
   sprintf(g_rootfilename,"%s/%s_%2.2d.root",g_config,g_config,g_runnumber);
   if(0==stat(g_rootfilename,&st)){
     int vers=getlastversionnumber(g_config,g_runnumber);
@@ -246,12 +263,15 @@ int main(int argc, char *argv[]){
     sprintf(cmd,"cp %s %s\n",g_rootfilename, rootfilename_new);
     exec(cmd);
     printf(" ... done\n");
+    //char fnam_param_new[256];
+    //sprintf(fnam_param_new,"%s/%s_%2.2d.v%2.2d.param",g_config,g_config,g_runnumber,vers+1);
+    //printf("%s: creating param file version: %s\n",__func__,fnam_param_new);
+    //g_rp.write(fnam_param_new);
   }
 
-  printf("%s: opening bin file %s for read ...",__func__,g_binfilename);
-  openBINfile_r(g_binfilename);
-  printf(" ... done\n");
-  
+  g_rp.write_ntp=1; // will write an ntuple
+  g_rp.write_bin=0; // and not a bin file!
+  //
   printf("%s: creating %s ... ",__func__,g_rootfilename);
   openROOTfile(g_rootfilename, &g_rp);
   

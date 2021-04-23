@@ -9,7 +9,8 @@ uint32_t VME_ADC3    =0;           // =0xC20000, ADC2, LECROY 1182
 uint32_t VME_CORBO   =0xF00000;    // =0xF00000, CORBO = CES RCB 8047
 uint32_t VME_CRB_CH  =0x000000;    // =0x000000, CORBO main channel
 uint32_t VME_CRB_CH2 =0x000000;    // =0x000001, CORBO secondary channel (pulse gen etc)
-uint32_t VME_CRB_CH3 =0x000000;    // =0x000002, CORBO channel used for a counter
+uint32_t VME_CRB_CH3 =0x000002;    // =0x000002, CORBO channel used for a counter
+uint32_t VME_CRB_CH4 =0x000003;    // =0x000003, CORBO channel used for a counter
 uint32_t VME_CRB_IRQ =3;        // VME IRQ ised in CORBO
 uint32_t VME_CRB_VEC =0x85;      // interrpt vector ised in CORBO
 uint32_t VME_V259    =0xC00000;    // =0xC00000, pattern unit
@@ -18,6 +19,38 @@ uint32_t VME_V260    =0;           // =0x00DD00, CAEN scaler
 uint32_t VME_V812    =0;           // =0x880000, CAEN V812 constant fraction discriminator #1
 uint32_t VME_V812_2  =0;           // =0x990000, CAEN V812 constant fraction discriminator #2
 
+
+//     |    inputs         inputs         inputs           inputs         inputs         inputs        | triggers
+//     |-----------------------------------------------------------------------------------------------------------
+//   i | 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31|32 33 34 35
+//     |-----------------------------------------------------------------------------------------------------------
+// JCH | 0  1  2  3  4  5  6  7  9 10 11 12 13 14 15 16 18 19 20 21 22 23 24 25 27 28 29 30 31 32 33 34| 8 17 26 35
+//     |-----------------------------------------------------------------------------------------------------------
+//   i |36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67|68 69 70 71
+//     |-----------------------------------------------------------------------------------------------------------
+// JCH |36 37 38 39 40 41 42 43 45 46 47 48 49 50 51 52 54 55 56 57 58 59 60 61 63 64 65 66 67 68 69 70|44 53 62 71
+
+int i2JCH(int i){// i is visible input#, JCH is the internal one
+  int JCH=0;
+  if(i>=0&&i<TR0DIG0CHAN)JCH=i+i/8;
+  else if(i>=TR0DIG0CHAN && i<N742CHAN) JCH=(i-TR0DIG0CHAN)*9+8;
+  else if(i>=N742CHAN && i<N742CHAN+TR0DIG0CHAN) JCH=i+(i-N742CHAN)/8;
+  else if(i>=N742CHAN+TR0DIG0CHAN && i<2*N742CHAN) JCH=(i-N742CHAN-TR0DIG0CHAN)*9+N742CHAN+8;
+  return JCH;
+};
+
+int JCH2i(int JCH){// i is visible input#, JCH is the internal one
+  int i=0;
+  if(JCH>=0 && JCH<N742CHAN){
+    if(8==JCH%9)i=TR0DIG0CHAN+JCH/9;
+    else i=JCH-JCH/9;
+  }
+  else if(JCH>=N742CHAN && JCH<2*N742CHAN){
+    if(8==JCH%9)i=N742CHAN+TR0DIG0CHAN+(JCH-N742CHAN)/9;
+    else i=JCH-(JCH-N742CHAN)/9;
+  }
+  return i;
+};
 
 bool goodhex(char* s, uint32_t *u){
   char hsyms[]="0123456789ABCDEF";
@@ -92,6 +125,7 @@ void runParam::reset(){
   vme_crb_ch  =0x000000;    // =0x000000, CORBO main channel
   vme_crb_ch2 =0x000001;    // =0x000001, CORBO secondary channel (pulse gen etc)
   vme_crb_ch3 =0x000002;    // =0x000002, CORBO channel used for a counter
+  vme_crb_ch4 =0x000003;    // =0x000003, CORBO channel used for a counter
   vme_crb_irq =3;           // =3,    VME IRQ ised in CORBO
   vme_crb_vec =0x85;        // =0x85, interrpt vector ised in CORBO
   vme_v259    =0xC00000;    // =0xC00000, pattern unit
@@ -116,6 +150,8 @@ void runParam::reset(){
   dig_use_correction=dig2_use_correction=1;
   dig_posttrigger=dig2_posttrigger=5;
   dig_frequency=dig2_frequency=0; // The digitizer freq code: 0->5GHz, 1->2.5GHz, 2->1GHz, 3->0.75GHz
+  memset(dig_calib_path,0,sizeof(dig_calib_path));
+  memset(dig2_calib_path,0,sizeof(dig2_calib_path));
   
   ADC1_used = ADC2_used = ADC3_used = ADC_used = TDC_used =false;
   digitizer_used=digitizer2_used=false;
@@ -133,6 +169,15 @@ void runParam::reset(){
   cx4[0]=-7000.; cx4[1]=  0.; cx4[2]=7000.;
   cy4[0]=-7000.; cy4[1]=  0.; cy4[2]=7000.;
   
+  //--- resetting the digitizer calibration coefficients of Vincenzo ------
+  memset(dig_p0,0,sizeof(dig_p0)); // coefficients for cell calibration
+  memset(dig_p1,0,sizeof(dig_p1)); // coefficients for cell calibration
+  memset(dig_p2,0,sizeof(dig_p2)); // coefficients for cell calibration
+  memset(dig_pa0,0,sizeof(dig_pa0)); // coefficients for sample calibration
+  memset(dig_pa1,0,sizeof(dig_pa1)); // coefficients for sample calibration
+  memset(dig_pa2,0,sizeof(dig_pa2)); // coefficients for sample calibration
+  memset(dig_timev,0,sizeof(dig_timev));                 // cell time widths
+  memset(dig_calibs_inited,0,sizeof(dig_calibs_inited)); // initialized or not
 }
   
 void runParam::setChanHV(char* nam, int ich, double v){
@@ -220,11 +265,8 @@ void runParam::setLED(int iLED, int ich, double v){
   LEDchan[iLED]=ich;
   ULED[iLED]=v;
 }
-
-void runParam::write(const char* fnam){
-  FILE* f=fopen(fnam,"w");
-  if(!f)return;
   
+void runParam::writestream(FILE* f){
   fprintf(f,"\n// HVCHAN <name> <HV chan #> <HV value in kV>\n");
   for(int i=0; i<nchans; ++i){
     if(HVchan[i]>=0)fprintf(f,"HVCHAN %s %d %6.4f\n",&chnam[i][0],HVchan[i],HV[i]);
@@ -248,6 +290,7 @@ void runParam::write(const char* fnam){
   fprintf(f,"VME_CRB_CH  0x%X\n",vme_crb_ch );
   if(vme_crb_ch2!=vme_crb_ch)fprintf(f,"VME_CRB_CH2 0x%X\n",vme_crb_ch2);
   if(vme_crb_ch3!=vme_crb_ch)fprintf(f,"VME_CRB_CH3 0x%X\n",vme_crb_ch3);
+  if(vme_crb_ch4!=vme_crb_ch)fprintf(f,"VME_CRB_CH4 0x%X\n",vme_crb_ch4);
   fprintf(f,"VME_V259    0x%8.8X\n",vme_v259   );
   fprintf(f,"VME_V1290   0x%8.8X\n",vme_v1290  );
   fprintf(f,"VME_V260    0x%8.8X\n",vme_v260   );
@@ -299,8 +342,13 @@ void runParam::write(const char* fnam){
   fprintf(f,"DIG2_POSTTRIGGER %f\n",dig2_posttrigger);
   
   fprintf(f,"\n// digitizer sampling frequency code: 0->5GS/s (default), 1->2.5, 2->1, 3->0.75\n");
-  fprintf(f,"DIG_FREQUENCY %f\n",dig_frequency);
-  fprintf(f,"DIG2_FREQUENCY %f\n",dig2_frequency);
+  fprintf(f,"DIG_FREQUENCY %d\n",dig_frequency);
+  fprintf(f,"DIG2_FREQUENCY %d\n",dig2_frequency);
+  
+  if(strlen(dig_calib_path)>1 || strlen(dig2_calib_path)>1)
+    fprintf(f,"\n// digitizer calibration paths (Vincenzo coefficients)\n");
+  if(strlen(dig_calib_path)>1)fprintf(f,"DIG_CALIB_PATH %s\n",dig_calib_path);
+  if(strlen(dig2_calib_path)>1)fprintf(f,"DIG2_CALIB_PATH %s\n",dig2_calib_path);
   
   fprintf(f,"\n// DWC calibration parameters\n");
   fprintf(f,"DWCX1PAR %8.1f %8.1f %8.1f\n", cx1[0], cx1[1], cx1[2]);
@@ -311,12 +359,16 @@ void runParam::write(const char* fnam){
   fprintf(f,"DWCY3PAR %8.1f %8.1f %8.1f\n", cy3[0], cy3[1], cy3[2]);
   
   fclose(f);
+  f=0;
 }
   
-void runParam::read(const char* fnam){
-  FILE* f=fopen(fnam,"r");
+void runParam::write(const char* fnam){
+  FILE* f=fopen(fnam,"w");
   if(!f)return;
-    
+  writestream(f);
+}
+  
+void runParam::readstream(FILE* f){
   char str[256], STR[256];
   while(str==fgets(str,255,f)){
     //for(int i=0; i<sizeof(STR)-1 && (STR[i]=toupper(str[i])); ++i){}
@@ -401,6 +453,9 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"VME_CRB_CH3")){
         if(nit>1 && goodhex(cn,&u))vme_crb_ch3=u;
       }
+      else if(0==strcmp(what,"VME_CRB_CH4")){
+        if(nit>1 && goodhex(cn,&u))vme_crb_ch4=u;
+      }
       else if(0==strcmp(what,"VME_V259")){
         if(nit>1 && goodhex(cn,&u))vme_v259=u;
       }
@@ -465,6 +520,12 @@ void runParam::read(const char* fnam){
       else if(0==strcmp(what,"DIG2_FREQUENCY")){
         if(nit>1 && nit1>0)dig2_frequency=n;
       }
+      else if(0==strcmp(what,"DIG_CALIB_PATH")){
+        if(nit>1) strncpy(dig_calib_path,cn,sizeof(dig_calib_path)-2);
+      }
+      else if(0==strcmp(what,"DIG2_CALIB_PATH")){
+        if(nit>1) strncpy(dig2_calib_path,cn,sizeof(dig2_calib_path)-2);
+      }
       else if(0==strcmp(what,"DWC1XPAR")){
         if(nit>1 && nit1>0 && nit2>0 && nit3>0) {cx1[0]=n; cx1[1]=v; cx1[2]=z;}
       }
@@ -492,6 +553,7 @@ void runParam::read(const char* fnam){
     }
   }
   fclose(f);
+  f=0;
   
   // now copy vme variables to globals, just in case
   VME_ADC1=    vme_adc1;
@@ -501,6 +563,7 @@ void runParam::read(const char* fnam){
   VME_CRB_CH=  vme_crb_ch;
   VME_CRB_CH2= vme_crb_ch2;
   VME_CRB_CH3= vme_crb_ch3;
+  VME_CRB_CH4= vme_crb_ch4;
   VME_V259=    vme_v259;
   VME_V1290=   vme_v1290;
   VME_V260=    vme_v260;
@@ -511,7 +574,7 @@ void runParam::read(const char* fnam){
   
   // check whether the run parameters make sense: 
   // at least one PMT name is present, and its HV >0
-  if(0!=nchans)init=true;
+  if(nchans>0)init=true;
   //printf("nchans=%d\n",nchans);
   
   // now inventory: what is used
@@ -562,6 +625,14 @@ void runParam::read(const char* fnam){
   if(digitizer2_used && dig2_conetnode<0){
     digitizer2_used=false;
     for(int j=N742CHAN; j<2*N742CHAN; ++j)used742[j]=0;
+  }
+  
+  if(digitizer_used && !dig_use_correction){
+    digitizer_calib_init();
+  }
+  
+  if(digitizer2_used && !dig2_use_correction){
+    digitizer2_calib_init();
   }
   
   // // version 1: a larger buffer
@@ -617,3 +688,63 @@ void runParam::read(const char* fnam){
     printf("%s: BINARY file record size is %d bytes\n",__func__,evbuflen);
   }
 }
+
+void runParam::read(const char* fnam){
+  FILE* f=fopen(fnam,"r");
+  if(!f)return;
+  readstream(f);
+}
+
+int runParam::read_digitizer_calibs(const char* path, int ifreq, int JCH){
+  int ich=JCH2i(JCH)%N742CHAN;
+  
+  if(strlen(path)<2)return 0;
+  
+  char ccellnam[256];
+  sprintf(ccellnam,"%s/%d/calib_cell_%d.txt",path,ifreq,ich);
+  FILE* fcell=fopen(ccellnam,"r");
+  if(!fcell)return 0;
+  for(int icell=0; icell<1024; ++icell){
+    fscanf(fcell,"%lg %lg %lg",&dig_p0[JCH][icell],&dig_p1[JCH][icell],&dig_p2[JCH][icell]);
+  }
+  fclose(fcell);
+  
+  char csamplnam[256];
+  sprintf(csamplnam,"%s/%d/calib_sample_%d.txt",path,ifreq,ich);
+  FILE* fsampl=fopen(csamplnam,"r");
+  if(!fsampl)return 0;
+  for(int isampl=0; isampl<1024; ++isampl){
+    fscanf(fsampl,"%lg %lg %lg",&dig_pa0[JCH][isampl],&dig_pa1[JCH][isampl],&dig_pa2[JCH][isampl]);
+  }
+  fclose(fsampl);
+  
+  char ctimenam[256];
+  sprintf(ctimenam,"%s/%d/calib_time_%d.txt",path,ifreq,ich);
+  FILE* ftime=fopen(ctimenam,"r");
+  if(!ftime)return 0;
+  for(int itime=0; itime<1024; ++itime){
+    fscanf(ftime,"%lg",&dig_timev[JCH][itime]);
+  }
+  fclose(ftime);
+  
+  return 1;
+}
+
+void runParam::digitizer_calib_init(){
+  printf("%s:  ",__func__);
+  for(int JCH=0; JCH<N742CHAN; ++JCH){
+    dig_calibs_inited[JCH]=read_digitizer_calibs(dig_calib_path, dig_frequency, JCH);
+    printf("%d",dig_calibs_inited[JCH]);
+  }
+  printf("\n");
+}
+
+void runParam::digitizer2_calib_init(){
+  printf("%s:  ",__func__);
+  for(int JCH=N742CHAN; JCH<2*N742CHAN; ++JCH){
+    dig_calibs_inited[JCH]=read_digitizer_calibs(dig2_calib_path, dig2_frequency, JCH);
+    printf("%d",dig_calibs_inited[JCH]);
+  }
+  printf("\n");
+}
+

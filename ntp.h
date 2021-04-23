@@ -44,6 +44,7 @@ extern float g_a742[2*N742CHAN][N742SAMPL];
 extern int g_startCell[2*N742CHAN];
 
 extern uint8_t g_evbuf[524288];
+extern uint8_t g_parbuf[135168];
 
 void reset_histos();
 void delete_histos();
@@ -76,16 +77,15 @@ void create_dimservstatus();
 void delete_dimservstatus();
 void update_dimservstatus();
 
-int i2JCH(int i);
-
-int JCH2i(int JCH);
-
 void pack_evbuf(uint8_t *evbuf);
 void unpack_evbuf(uint8_t *evbuf);
 
-void openBINfile_w(const char* filenam);
-void openBINfile_r(const char* filenam);
+int openBINfile_w(const char* filenam);
+int openBINfile_r(const char* filenam);
 int writeBINfile();
 int readBINfile();
+void rewind_binfile();
 void closeBINfile();
 
+void apply_digitizer_calibs(int JCH, int istart, float *raw, float *tims, float *volts);
+void apply_digitizer_calibs_a(int JCH, int istart, float *raw, float *volts);

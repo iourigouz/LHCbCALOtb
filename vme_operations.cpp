@@ -626,36 +626,53 @@ int CORBO_init(int base){
   if(g_rp.vme_crb_ch2!=g_rp.vme_crb_ch){// the channel for pulse generation
     if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch2, 0xEC)) ){ // enable second channel, test input
       printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,g_rp.vme_crb_ch2);
-      return -101;
+      return -106;
     }
     if(cvSuccess!=(ret=CORBO_setbusy(base, g_rp.vme_crb_ch2)) ){ // set it busy
       printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xEC\n", __func__,ret,g_rp.vme_crb_ch2);
-      return -102;
+      return -107;
     }
     uint16_t csr2=0;
     if(cvSuccess!=(ret=CORBO_read_CSR(base, g_rp.vme_crb_ch2, csr2)) ){ // check CSR
       printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,g_rp.vme_crb_ch2);
-      return -104;
+      return -108;
     }
     if(0xEC!=(csr2&0xFF)){
       printf("WARNING: bad csrL = 0x%x for pulser, CORBO ch %d\n", (csr2&0xFF), g_rp.vme_crb_ch2);
-      return -105;
+      return -109;
     }
   }
   
-  if(g_rp.vme_crb_ch3!=g_rp.vme_crb_ch && g_rp.vme_crb_ch3!=g_rp.vme_crb_ch2){// the channel for pulse generation
+  if(g_rp.vme_crb_ch3!=g_rp.vme_crb_ch && g_rp.vme_crb_ch3!=g_rp.vme_crb_ch2){// the channel for a counter
     if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch3, 0xC0)) ){ // enable third channel to count inputs
       printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xC0\n", __func__,ret,g_rp.vme_crb_ch3);
-      return -101;
+      return -110;
     }
     uint16_t csr3=0;
     if(cvSuccess!=(ret=CORBO_read_CSR(base, g_rp.vme_crb_ch3, csr3)) ){ // check CSR
       printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,g_rp.vme_crb_ch3);
-      return -104;
+      return -111;
     }
     if(0xC0!=(csr3&0xFF)){
       printf("WARNING: bad csrL = 0x%x for counter, CORBO ch %d\n", (csr3&0xFF), g_rp.vme_crb_ch3);
-      return -105;
+      return -112;
+    }
+  }
+  
+  if(g_rp.vme_crb_ch4!=g_rp.vme_crb_ch && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch2 
+     && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch3){// the channel for a counter
+    if(cvSuccess!=(ret=CORBO_write_CSR(base, g_rp.vme_crb_ch4, 0xC0)) ){ // enable fourth channel to count inputs
+      printf("%s: error %d in CORBO_write_CSR, ch %d, CSR=0xC0\n", __func__,ret,g_rp.vme_crb_ch4);
+      return -113;
+    }
+    uint16_t csr4=0;
+    if(cvSuccess!=(ret=CORBO_read_CSR(base, g_rp.vme_crb_ch4, csr4)) ){ // check CSR
+      printf("%s: error %d in CORBO_read_CSR, ch %d\n", __func__,ret,g_rp.vme_crb_ch4);
+      return -114;
+    }
+    if(0xC0!=(csr4&0xFF)){
+      printf("WARNING: bad csrL = 0x%x for counter, CORBO ch %d\n", (csr4&0xFF), g_rp.vme_crb_ch4);
+      return -115;
     }
   }
   
@@ -1232,6 +1249,14 @@ int vme_start(){
     }
   }
   
+  if(g_rp.vme_crb_ch4!=g_rp.vme_crb_ch3 && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch2 
+     && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch){
+    if( cvSuccess!=(c_res=CORBO_reset_evcounter(g_rp.vme_corbo,g_rp.vme_crb_ch4)) ){
+      printf("%s: reset CORBO counter ch4 returns %d\n",__func__,c_res);
+      return c_res;
+    }
+  }
+  
   //CVIRQLevels mask_enable=cvirq(g_rp.vme_crb_irq);
   //if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, cvirq(g_rp.vme_crb_irq)))){; // level 3
   if(cvSuccess!=(c_res=CAENVME_IRQEnable(BHandle, 0xFFFFFFFF))){; // all levels
@@ -1448,6 +1473,28 @@ int vme_clearCORBO_3(){
   }
   else{
     printf("%s: WARNING: vme_crb_ch3 not defined!!!\n",__func__);
+    return cvSuccess;
+  }
+}
+
+int vme_readCORBO_4(uint32_t &count){
+  if(g_rp.vme_crb_ch4!=g_rp.vme_crb_ch3 && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch2 
+     && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch){
+    return CORBO_read_evcounter(g_rp.vme_corbo,g_rp.vme_crb_ch4,count);
+  }
+  else{
+    printf("%s: WARNING: vme_crb_ch4 not defined!!!\n",__func__);
+    return cvSuccess;
+  }
+}
+
+int vme_clearCORBO_4(){
+  if(g_rp.vme_crb_ch4!=g_rp.vme_crb_ch3 && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch2 
+     && g_rp.vme_crb_ch4!=g_rp.vme_crb_ch){
+    return CORBO_reset_evcounter(g_rp.vme_corbo,g_rp.vme_crb_ch4);
+  }
+  else{
+    printf("%s: WARNING: vme_crb_ch4 not defined!!!\n",__func__);
     return cvSuccess;
   }
 }
