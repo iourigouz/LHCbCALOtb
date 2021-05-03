@@ -36,6 +36,8 @@ int digitizer_init(char* config_name){
   if(!g_rp.digitizer_used) return 0;
   if(g_digitizer_initialized)return 0;
   
+  uint16_t used742mask=0;
+  
   //CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
   int ret = CAEN_DGTZ_Success;
   
@@ -139,6 +141,11 @@ int digitizer_init(char* config_name){
   }
   
   WDcfg.EnableMask &= (1<<(WDcfg.Nch/8))-1;
+  for(int JCH=0; JCH<N742CHAN; ++JCH){
+    if(g_rp.used742[JCH]) used742mask |= (1<<(JCH/MAX_X742_CHANNEL_SIZE));
+  }
+  WDcfg.EnableMask &= used742mask;
+  printf("%s: digitizer #1 enable mask is 0x%X\n",__func__,WDcfg.EnableMask);
   WDcfg.PostTrigger=g_rp.dig_posttrigger;
   WDcfg.DRS4Frequency=(CAEN_DGTZ_DRS4Frequency_t)g_rp.dig_frequency;
   
@@ -516,6 +523,8 @@ int digitizer2_init(char* config_name){
   if(!g_rp.digitizer2_used) return 0;
   if(g_digitizer2_initialized)return 0;
   
+  uint16_t used742mask=0;
+  
   //CAEN_DGTZ_ErrorCode CAENDGTZ_API ret = CAEN_DGTZ_Success;
   int ret = CAEN_DGTZ_Success;
   
@@ -619,6 +628,11 @@ int digitizer2_init(char* config_name){
   }
   
   WDcfg_2.EnableMask &= (1<<(WDcfg_2.Nch/8))-1;
+  for(int JCH=0; JCH<N742CHAN; ++JCH){
+    if(g_rp.used742[JCH+N742CHAN]) used742mask |= (1<<(JCH/MAX_X742_CHANNEL_SIZE));
+  }
+  WDcfg_2.EnableMask &= used742mask;
+  printf("%s: digitizer #2 enable mask is 0x%X\n",__func__,WDcfg_2.EnableMask);
   WDcfg_2.PostTrigger=g_rp.dig2_posttrigger;
   WDcfg_2.DRS4Frequency=(CAEN_DGTZ_DRS4Frequency_t)g_rp.dig2_frequency;
   
