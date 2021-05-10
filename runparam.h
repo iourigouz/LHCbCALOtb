@@ -62,10 +62,14 @@ class runParam {
   
   int vme_conetnode, dig_conetnode, dig2_conetnode;
   
+  char HVIP[MAXNAMELENGTH];
+  int nHVchans;
+  int HVchan[MAXCHANS];
+  char HVname[MAXCHANS][MAXNAMELENGTH];
+  double HV[MAXCHANS];
+  
   int nchans;
   char chnam[MAXCHANS][MAXNAMELENGTH];
-  int HVchan[MAXCHANS];
-  double HV[MAXCHANS];
   int datatype[MAXCHANS];  // 1=ADC; 2=TDC; 3=DIG
   int datachan[MAXCHANS];
   // polarity for presentation. meaningful only for DIG

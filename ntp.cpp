@@ -74,7 +74,7 @@ char memdir[256]="";
 char filedir[256]="";
 
 // online histos
-TH1D* g_hPMTHV=0;
+TH1D* g_hHVchan=0, *g_hHVval=0;
 TH1D* g_hULED=0;
 TH1D* g_ht0=0;
 
@@ -205,12 +205,14 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
     
     g_tprev=g_t0;
     
-    g_hPMTHV=new TH1D("PMTHV","PMTHV",216,0,216);
-    for(int i=0; i<g_rp.nchans; ++i){
-      int ihvchan=g_rp.HVchan[i];
-      if(ihvchan>=0){
-        g_hPMTHV->GetXaxis()->SetBinLabel(ihvchan+1,&g_rp.chnam[i][0]);
-        g_hPMTHV->Fill(ihvchan+0.5,g_rp.HV[i]);
+    if(g_rp.nHVchans>0){
+      g_hHVval=new TH1D("HVval","HV values",g_rp.nHVchans,0,g_rp.nHVchans);
+      g_hHVchan=new TH1D("HVchan","HV chan",g_rp.nHVchans,0,g_rp.nHVchans);
+      for(int i=0; i<g_rp.nHVchans; ++i){
+        g_hHVval->GetXaxis()->SetBinLabel(i+1,&g_rp.HVname[i][0]);
+        g_hHVval->Fill(i+0.5,g_rp.HV[i]);
+        g_hHVchan->GetXaxis()->SetBinLabel(i+1,&g_rp.HVname[i][0]);
+        g_hHVchan->Fill(i+0.5,g_rp.HVchan[i]);
       }
     }
     
@@ -537,7 +539,8 @@ void closeROOTfile(){
   if(g_ROOTfile){
     g_ROOTfile->cd();
     
-    if(g_hPMTHV)g_hPMTHV->Write();
+    if(g_hHVval)g_hHVval->Write();
+    if(g_hHVchan)g_hHVchan->Write();
     if(g_hULED)g_hULED->Write();
     if(g_ht0)g_ht0->Write();
     if(g_hpattern)g_hpattern->Write();
@@ -606,7 +609,7 @@ void closeROOTfile(){
     g_ROOTfile=(TFile*)0;
     g_ROOTtree=(TTree*)0;
     
-    g_hPMTHV=g_hULED=g_ht0=0;
+    g_hHVval=g_hHVchan=g_hULED=g_ht0=0;
     g_hpattern=0;
     for(int i=0; i<NADCCHAN; ++i) g_hADC_LED[i]=g_hADC_PED[i]=g_hADC_SIG[i]=0;
     g_hdwc1x_LED=g_hdwc1y_LED=g_hdwc2x_LED=g_hdwc2y_LED=0;
@@ -970,7 +973,8 @@ void fill_all(){
 }
 
 void delete_histos(){
-  if(g_hPMTHV){ g_hPMTHV->Delete(); g_hPMTHV=0; }
+  if(g_hHVchan){ g_hHVchan->Delete(); g_hHVchan=0; }
+  if(g_hHVval ){ g_hHVval->Delete(); g_hHVval=0; }
   if(g_hULED){ g_hULED->Delete(); g_hULED=0; }
   if(g_ht0){ g_ht0->Delete(); g_ht0=0; }
   if(g_hpattern){ g_hpattern->Delete(); g_hpattern=0; }
@@ -1023,7 +1027,8 @@ void delete_histos(){
 }
 
 void reset_histos(){
-  if(g_hPMTHV)g_hPMTHV->Reset();
+  if(g_hHVchan)g_hHVchan->Reset();
+  if(g_hHVval)g_hHVval->Reset();
   if(g_hULED)g_hULED->Reset();
   if(g_ht0)g_ht0->Reset();
   if(g_hpattern)g_hpattern->Reset();

@@ -137,11 +137,14 @@ void runParam::reset(){
   vme_conetnode=0;
   dig_conetnode=1;
   dig2_conetnode=-1; // not connected by default
-  
-  nchans=0;
-  memset(chnam,0,sizeof(chnam));
+
+  nHVchans=0;
+  memset(HVIP,0,sizeof(HVIP));
+  memset(HVname,0,sizeof(HVname));
   for(int ich=0; ich<sizeof(HVchan)/sizeof(int); ++ich)HVchan[ich]=-1; //  all illegal
   memset(HV,0,sizeof(HV));
+  nchans=0;
+  memset(chnam,0,sizeof(chnam));
   memset(datatype,0,sizeof(datatype));
   memset(datachan,0,sizeof(datachan));
   memset(polarity,0,sizeof(polarity));
@@ -182,21 +185,21 @@ void runParam::reset(){
   
 void runParam::setChanHV(char* nam, int ich, double v){
   int inamexist=-1, ichanexist=-1;
-  for(int j=0; j<nchans; ++j){
-    if(0==strcmp(nam,&chnam[j][0]))inamexist=j;
+  for(int j=0; j<nHVchans; ++j){
+    if(0==strcmp(nam,&HVname[j][0]))inamexist=j;
     if(ich==HVchan[j])ichanexist=j;
   }
   
   if(inamexist<0){ // new chan
-    if(nchans>=MAXCHANS){
+    if(nHVchans>=MAXCHANS){
       printf("%s WARNING: too many channels, cannot add %s\n",__func__,nam);
       return;
     }
     if(ichanexist>=0)printf("%s WARNING: assigning existing HVchan %d to new name %s\n",__func__,ich,nam);
-    strncpy(&chnam[nchans][0],nam,MAXNAMELENGTH-1);
-    HVchan[nchans]=ich;
-    HV[nchans]=v;
-    nchans++;
+    strncpy(&HVname[nHVchans][0],nam,MAXNAMELENGTH-1);
+    HVchan[nHVchans]=ich;
+    HV[nHVchans]=v;
+    nHVchans++;
   }
   else{// modify existing
     if(HVchan[inamexist]>=0)printf("%s WARNING: modifying existing: %s\n",__func__,nam);
@@ -267,9 +270,10 @@ void runParam::setLED(int iLED, int ich, double v){
 }
   
 void runParam::writestream(FILE* f){
+  if(strlen(HVIP)>2)fprintf(f,"HVIP %s \n",&HVIP[0]);
   fprintf(f,"\n// HVCHAN <name> <HV chan #> <HV value in kV>\n");
-  for(int i=0; i<nchans; ++i){
-    if(HVchan[i]>=0)fprintf(f,"HVCHAN %s %d %6.4f\n",&chnam[i][0],HVchan[i],HV[i]);
+  for(int i=0; i<nHVchans; ++i){
+    if(HVchan[i]>=0)fprintf(f,"HVCHAN %s %d %6.4f\n",&HVname[i][0],HVchan[i],HV[i]);
   }
   
   fprintf(f,"\n// LEDCHAN <iLED> <LED chan> <U_LED> \n");
@@ -388,7 +392,10 @@ void runParam::readstream(FILE* f){
       int nit3=0; if(nit>3) nit3=sscanf(cz,"%lf",&z);
         
       if(0==strcmp(what,"HVCHAN")){
-        if(nit>3 && nit2>0 &&nit3>0)setChanHV(cn,(int)limited(v,0,199),limited(z,0,2));
+        if(nit>3 && nit2>0 &&nit3>0)setChanHV(cn,(int)limited(v,0,599),limited(z,0,4));
+      }
+      else if(0==strcmp(what,"HVIP")){
+        if(nit>1) strncpy(HVIP,cn,sizeof(HVIP)-2);
       }
       else if(0==strcmp(what,"PEDPATT")){
         if(nit>1 && nit1>0)PEDpatt=n;

@@ -23,6 +23,7 @@
 #include "TH1D.h"
 #include "TTree.h"
 
+#include "SY5527_operations.h"
 #include "vme_operations.h"
 #include "digitizer_operations.h"
 
@@ -187,6 +188,16 @@ int start_run(const char* task){
     return 2;
   }
   
+  // check HV, if HV control is foreseen
+  bool HVOK=SY5527_checkAllHV();
+  if(!HVOK){
+    printf("%s: HV NOT_OK!!! Configuring...\n",__func__);
+    SY5527_setAllHVOn();
+  }
+  else{
+    printf("%s: HV is ok, go on ...\n",__func__);
+  }
+  
   /*FILE* fparw=fmemopen(g_parbuf,sizeof(g_parbuf),"w");
   g_rp.writestream(fparw);
   g_rp.reset();
@@ -267,6 +278,12 @@ int start_run(const char* task){
       printf("%s: error in digitizer2_adjust_pedestals\n",__func__); 
       //    return 12;
     }
+  }
+  
+  if(!HVOK){
+    printf("%s: waining for HV_OK ...  \n",__func__);
+    SY5527_waitAllHVOn();
+    printf("   done,    \n");
   }
   
   g_ievt=g_nped=g_nled=g_nsig=0;
