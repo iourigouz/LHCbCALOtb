@@ -210,19 +210,21 @@ void openROOTfile(const char* filenam, const RUNPARAM* rp){
       g_hHVchan=new TH1D("HVchan","HV chan",g_rp.nHVchans,0,g_rp.nHVchans);
       for(int i=0; i<g_rp.nHVchans; ++i){
         g_hHVval->GetXaxis()->SetBinLabel(i+1,&g_rp.HVname[i][0]);
-        g_hHVval->Fill(i+0.5,g_rp.HV[i]);
+        g_hHVval->SetBinContent(i+1,g_rp.HV[i]);
         g_hHVchan->GetXaxis()->SetBinLabel(i+1,&g_rp.HVname[i][0]);
-        g_hHVchan->Fill(i+0.5,g_rp.HVchan[i]);
+        g_hHVchan->SetBinContent(i+1,g_rp.HVchan[i]);
       }
     }
     
-    g_hULED=new TH1D("ULED","ULED",216,0,216);
-    for(int i=0; i<MAXLEDS; ++i){
-      int iledchan=g_rp.LEDchan[i];
-      if(iledchan>=0){
-        char nm[32]; sprintf(nm,"LED%d",i);
-        g_hULED->GetXaxis()->SetBinLabel(iledchan+1,nm);
-        g_hULED->Fill(iledchan+0.5,g_rp.ULED[i]);
+    if(g_rp.nLEDs>0){
+      g_hULED=new TH1D("ULED","ULED",216,0,216);
+      for(int i=0; i<MAXLEDS; ++i){
+        int iledchan=g_rp.LEDchan[i];
+        if(iledchan>=0){
+          char nm[32]; sprintf(nm,"LED%d",i);
+          g_hULED->GetXaxis()->SetBinLabel(iledchan+1,nm);
+          g_hULED->Fill(iledchan+0.5,g_rp.ULED[i]);
+        }
       }
     }
     

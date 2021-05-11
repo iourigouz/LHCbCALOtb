@@ -163,7 +163,7 @@ bool SY5527_checkAllHV(){
     if( fabs(g_rp.HV[i]*1000-VMon)>1 )result=false;
   }
   
-  if(!result){
+  if(result){
     ret=SY5527_logout();
     if(0!=ret){
       printf("%s(): HV logout error, will proceed without HV control\n",__func__);

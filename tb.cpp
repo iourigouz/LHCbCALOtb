@@ -281,7 +281,7 @@ int start_run(const char* task){
   }
   
   if(!HVOK){
-    printf("%s: waining for HV_OK ...  \n",__func__);
+    printf("%s: waiting for HV_OK ...  \n",__func__);
     SY5527_waitAllHVOn();
     printf("   done,    \n");
   }
